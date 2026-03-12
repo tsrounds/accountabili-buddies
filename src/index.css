@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   Base typography
+   ───────────────────────────────────────────── */
+
+@layer base {
+  html {
+    font-family: 'Special Elite', serif;
+    color: #2C3E50;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Rye', serif;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Aged Paper Texture (.paper-bg)
+   Three-layer approach:
+   1. Warm radial vignette (cream → aged tan toward edges)
+   2. SVG feTurbulence noise encoded as data URI (subtle grain)
+   3. Diagonal fiber lines at very low opacity (simulates paper weave)
+   ───────────────────────────────────────────── */
+
+.paper-bg {
+  background-color: #FDF5E6;
+  background-image:
+    /* Layer 3 — diagonal fiber grain */
+    repeating-linear-gradient(
+      112deg,
+      transparent,
+      transparent 2px,
+      rgba(44, 62, 80, 0.012) 2px,
+      rgba(44, 62, 80, 0.012) 3px
+    ),
+    /* Layer 2 — SVG noise grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E"),
+    /* Layer 1 — warm radial vignette */
+    radial-gradient(ellipse at 50% 30%, #FDF5E6 0%, #EDE0C4 55%, #D5C49D 100%);
+}
+
+/* ─────────────────────────────────────────────
+   Reusable retro component classes
+   ───────────────────────────────────────────── */
+
+@layer components {
+  .btn-retro {
+    @apply inline-flex items-center justify-center px-6 py-3
+           bg-mustard text-slate font-display text-sm
+           uppercase tracking-wider border-2 border-slate
+           shadow-retro hover:translate-x-[2px] hover:translate-y-[2px]
+           hover:shadow-retro-sm active:translate-x-[4px] active:translate-y-[4px]
+           active:shadow-none transition-all duration-75 cursor-pointer
+           select-none;
+  }
+
+  .btn-danger {
+    @apply btn-retro bg-retro-red text-cream;
+  }
+
+  .btn-outline {
+    @apply btn-retro bg-transparent text-slate;
+  }
+
+  .card-retro {
+    @apply bg-cream border-2 border-slate shadow-retro p-4;
+  }
+
+  .input-retro {
+    @apply w-full border-2 border-slate bg-cream px-3 py-2
+           font-body text-slate placeholder-slate/40
+           focus:outline-none focus:border-mustard transition-colors duration-150;
+  }
+
+  .label-retro {
+    @apply block font-display text-xs text-slate/60 uppercase tracking-wider mb-1;
+  }
+
+  .badge-retro {
+    @apply inline-block px-2 py-0.5 border border-slate
+           font-display text-[10px] uppercase tracking-widest;
+  }
+}
