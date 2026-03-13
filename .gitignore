@@ -22,3 +22,6 @@ ui-debug.log
 .DS_Store
 *.local
 .vscode/
+
+# Claude Code
+.claude/

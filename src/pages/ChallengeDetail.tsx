@@ -146,6 +146,8 @@ export default function ChallengeDetail() {
   const durationLabel = challenge.durationType === 'ongoing' ? 'Ongoing' : `${challenge.duration} days`
   const periodLabel = (p: string) => p.replace('per_', 'per ')
   const allDossiersComplete = members.length > 0 && members.every(m => m.dossierComplete)
+  const goalsSetCount = members.filter(m => m.personalGoal && m.personalGoal.trim() !== '').length
+  const allGoalsSet = members.length > 0 && goalsSetCount === members.length
   const myLbEntry = leaderboard.find(e => e.uid === currentUser?.uid)
   const checkedInToday = myLbEntry?.lastCheckinDate === today
 
@@ -278,6 +280,11 @@ export default function ChallengeDetail() {
 
           {isCreator && (
             <div className="border-t border-slate/20 pt-4 space-y-2">
+              {!allGoalsSet && (
+                <p className="font-body text-slate/40 text-xs text-center">
+                  {goalsSetCount}/{members.length} goals set
+                </p>
+              )}
               {!allDossiersComplete && (
                 <p className="font-body text-slate/40 text-xs text-center">
                   {members.filter(m => m.dossierComplete).length}/{members.length} dossiers filed
@@ -286,12 +293,16 @@ export default function ChallengeDetail() {
               <button
                 className="btn-retro w-full gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 onClick={() => void handleStartMission()}
-                disabled={starting}
+                disabled={starting || !allGoalsSet}
               >
                 <Rocket size={15} strokeWidth={1.8} />
                 {starting ? 'Deploying...' : 'Deploy Mission'}
               </button>
-              {!allDossiersComplete && (
+              {!allGoalsSet ? (
+                <p className="font-body text-slate/30 text-[10px] text-center">
+                  All members must set a goal before deploying.
+                </p>
+              ) : !allDossiersComplete && (
                 <p className="font-body text-slate/30 text-[10px] text-center">
                   You can deploy before all dossiers are filed.
                 </p>
@@ -374,7 +385,7 @@ export default function ChallengeDetail() {
                         size={13}
                         strokeWidth={1.5}
                         className={checkedToday ? 'text-mustard' : 'text-slate/20'}
-                        fill={checkedToday ? '#D4A017' : 'none'}
+                        fill={checkedToday ? '#E7F53C' : 'none'}
                       />
                       <span className="font-display text-xs text-slate/60">
                         {entry.totalCheckins}

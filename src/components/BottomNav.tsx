@@ -18,7 +18,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-slate bg-cream shadow-[0_-4px_0px_#2C3E50]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-teal border-t border-cream/10">
       <ul className="flex items-stretch max-w-lg mx-auto">
         {NAV_ITEMS.map(({ to, label, Icon, end }) => (
           <li key={to} className="flex-1">
@@ -29,7 +29,7 @@ export default function BottomNav() {
                 [
                   'flex flex-col items-center justify-center gap-1 py-3 w-full',
                   'transition-colors duration-100',
-                  isActive ? 'text-mustard' : 'text-slate/50 hover:text-slate',
+                  isActive ? 'text-neon' : 'text-cream/40 hover:text-cream/70',
                 ].join(' ')
               }
             >

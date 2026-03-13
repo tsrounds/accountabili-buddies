@@ -8,19 +8,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream: '#FDF5E6',
-        mustard: '#D4A017',
-        'retro-red': '#C0392B',
-        slate: '#2C3E50',
-        olive: '#6B7A2E',
+        // New palette
+        dark: '#1F211F',
+        neon: '#E7F53C',
+        cream: '#FCF1E4',
+        teal: '#00CCC0',
+        'dark-teal': '#1A3C3F',
+        purple: '#7885FF',
+        'light-purple': '#B7C8E9',
+        // Legacy aliases — same names, new values so existing pages update automatically
+        slate: '#FCF1E4',
+        mustard: '#E7F53C',
+        'retro-red': '#FF6B6B',
+        olive: '#00CCC0',
       },
       fontFamily: {
-        display: ['Rye', 'serif'],
-        body: ['"Special Elite"', 'serif'],
+        display: ['Tholoes', 'Impact', '"Arial Black"', 'sans-serif'],
+        body: ['"Bebas Neue"', 'Impact', 'sans-serif'],
       },
       boxShadow: {
-        retro: '4px 4px 0px #2C3E50',
-        'retro-sm': '2px 2px 0px #2C3E50',
+        retro: '0 2px 16px rgba(0,0,0,0.4)',
+        'retro-sm': '0 1px 8px rgba(0,0,0,0.3)',
+        card: '0 2px 16px rgba(0,0,0,0.4)',
+        glow: '0 0 20px rgba(231,245,60,0.25)',
       },
     },
   },

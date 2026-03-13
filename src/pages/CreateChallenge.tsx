@@ -19,7 +19,7 @@ const CHALLENGE_TYPES: ChallengeType[] = [
   { key: 'Sleep',        label: 'Sleep',       Icon: Moon        },
   { key: 'Habit',        label: 'Habit',       Icon: Target      },
 ]
-import { collection, addDoc, setDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, setDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
@@ -50,6 +50,14 @@ export default function CreateChallenge() {
   const [error, setError] = useState<string | null>(null)
   const [share, setShare] = useState<ShareState | null>(null)
   const [copied, setCopied] = useState(false)
+
+  // Goal-setting step (shown after challenge is created, before invite code)
+  const [goalStep, setGoalStep] = useState(true)
+  const [personalGoal, setPersonalGoal] = useState('')
+  const [targetFrequency, setTargetFrequency] = useState('1')
+  const [frequencyPeriod, setFrequencyPeriod] = useState<'per_day' | 'per_week' | 'per_month'>('per_week')
+  const [goalSubmitting, setGoalSubmitting] = useState(false)
+  const [goalError, setGoalError] = useState<string | null>(null)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -108,6 +116,28 @@ export default function CreateChallenge() {
     }
   }
 
+  async function handleGoalSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!share || !currentUser) return
+    setGoalError(null)
+    setGoalSubmitting(true)
+    try {
+      await updateDoc(
+        doc(db, 'ab_challenges', share.challengeId, 'members', currentUser.uid),
+        {
+          personalGoal: personalGoal.trim(),
+          targetFrequency: parseInt(targetFrequency, 10),
+          frequencyPeriod,
+        }
+      )
+      setGoalStep(false)
+    } catch (err) {
+      setGoalError(err instanceof Error ? err.message : 'Failed to save goal. Try again.')
+    } finally {
+      setGoalSubmitting(false)
+    }
+  }
+
   async function handleShare() {
     if (!share) return
     try {
@@ -127,6 +157,93 @@ export default function CreateChallenge() {
     await navigator.clipboard.writeText(share.inviteUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  // ── Goal-setting step (after challenge created, before invite) ───────────
+  if (share && goalStep) {
+    return (
+      <section className="space-y-5">
+        <div className="flex items-center gap-2">
+          <Target size={22} className="text-mustard" strokeWidth={1.5} />
+          <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
+            Set Your Mission
+          </h2>
+        </div>
+
+        <form onSubmit={e => void handleGoalSubmit(e)} className="card-retro space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate/20 pb-3">
+            <ArrowRight size={16} className="text-mustard" strokeWidth={1.8} />
+            <span className="font-display text-xs text-slate uppercase tracking-wider">
+              Your Personal Goal
+            </span>
+          </div>
+
+          <p className="font-body text-slate/60 text-sm leading-relaxed">
+            Mission created! Before sharing the invite, set your own goal for{' '}
+            <span className="font-semibold text-slate">{share.challengeName}</span>.
+          </p>
+
+          {goalError && (
+            <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2">
+              {goalError}
+            </p>
+          )}
+
+          <div>
+            <label htmlFor="personalGoal" className="label-retro">Your Goal</label>
+            <input
+              id="personalGoal"
+              type="text"
+              value={personalGoal}
+              onChange={e => setPersonalGoal(e.target.value)}
+              placeholder="e.g. Run 3 times per week"
+              required
+              autoFocus
+              className="input-retro"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="targetFrequency" className="label-retro">Target</label>
+              <input
+                id="targetFrequency"
+                type="number"
+                min="1"
+                max="99"
+                value={targetFrequency}
+                onChange={e => setTargetFrequency(e.target.value)}
+                required
+                className="input-retro"
+              />
+            </div>
+            <div>
+              <label htmlFor="frequencyPeriod" className="label-retro">Period</label>
+              <select
+                id="frequencyPeriod"
+                value={frequencyPeriod}
+                onChange={e => setFrequencyPeriod(e.target.value as typeof frequencyPeriod)}
+                className="input-retro"
+              >
+                <option value="per_day">Per Day</option>
+                <option value="per_week">Per Week</option>
+                <option value="per_month">Per Month</option>
+              </select>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={goalSubmitting || !personalGoal.trim()}
+            className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {goalSubmitting ? 'Saving...' : (
+              <>Save Goal &amp; Get Invite Code <ArrowRight size={14} /></>
+            )}
+          </button>
+        </form>
+      </section>
+    )
   }
 
   // ── Share screen ─────────────────────────────────────────────────────────

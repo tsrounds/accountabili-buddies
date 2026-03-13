@@ -224,7 +224,7 @@ export default function Home() {
                               ? 'text-slate/30'
                               : 'text-slate/15'
                         }
-                        fill={c.status === 'active' && c.checkedInToday ? '#D4A017' : 'none'}
+                        fill={c.status === 'active' && c.checkedInToday ? '#E7F53C' : 'none'}
                       />
                       <span className="font-display text-[9px] uppercase tracking-wide text-slate/40">
                         {c.status === 'active'
