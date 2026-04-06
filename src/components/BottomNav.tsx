@@ -18,8 +18,8 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-teal border-t border-cream/10">
-      <ul className="flex items-stretch max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none pb-4 px-4">
+      <ul className="pointer-events-auto flex items-stretch max-w-lg mx-auto bg-dark-teal rounded-full shadow-float border border-cream/10 px-2">
         {NAV_ITEMS.map(({ to, label, Icon, end }) => (
           <li key={to} className="flex-1">
             <NavLink
@@ -27,16 +27,25 @@ export default function BottomNav() {
               end={end}
               className={({ isActive }) =>
                 [
-                  'flex flex-col items-center justify-center gap-1 py-3 w-full',
-                  'transition-colors duration-100',
-                  isActive ? 'text-neon' : 'text-cream/40 hover:text-cream/70',
+                  'relative flex flex-col items-center justify-center gap-1 py-3 w-full min-h-[56px] rounded-full',
+                  'transition-colors duration-150',
+                  isActive ? 'text-dark' : 'text-cream/50 hover:text-cream/80',
                 ].join(' ')
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} aria-hidden="true" />
-                  <span className="text-[10px] font-display uppercase tracking-wider leading-none">
+                  {/* Active neon pill indicator */}
+                  {isActive && (
+                    <span className="absolute inset-1 rounded-full bg-neon animate-fade-in" aria-hidden="true" />
+                  )}
+                  <Icon
+                    size={20}
+                    strokeWidth={isActive ? 2.5 : 1.8}
+                    aria-hidden="true"
+                    className="relative z-10 transition-transform duration-150 active:scale-90"
+                  />
+                  <span className="relative z-10 text-[10px] font-display uppercase tracking-wider leading-none">
                     {label}
                   </span>
                 </>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Users, FileText, ArrowRight, AlertCircle } from 'lucide-react'
+import { ArrowRight, AlertCircle } from 'lucide-react'
 import {
   doc,
   getDoc,
@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
 
 interface ChallengeData {
   challengeId: string
@@ -133,15 +135,13 @@ export default function JoinChallenge() {
   // ── Already a member ─────────────────────────────────────────────────────
   if (lookup.status === 'already_member') {
     return (
-      <section className="space-y-5">
-        <div className="flex items-center gap-2">
-          <Users size={22} className="text-mustard" strokeWidth={1.5} />
-          <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-            Join a Mission
-          </h2>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center">
+          <MascotZone mood="proud" size="sm" headline="ALREADY ENLISTED" />
         </div>
-        <div className="card-retro text-center space-y-4 py-8">
-          <p className="font-body text-slate/70 text-sm">
+        <ZoneDivider />
+        <div className="zone-content flex flex-col items-center text-center space-y-4 py-4">
+          <p className="font-body text-dark/60 text-sm">
             You're already enlisted in this mission.
           </p>
           <button
@@ -152,179 +152,172 @@ export default function JoinChallenge() {
             View Mission
           </button>
         </div>
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center gap-2">
-        <Users size={22} className="text-mustard" strokeWidth={1.5} />
-        <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-          Join a Mission
-        </h2>
+    <div className="flex flex-col">
+      <div className="zone-hero-compact pb-4 flex flex-col items-center">
+        <MascotZone
+          mood={lookup.status === 'found' ? 'proud' : 'idle'}
+          size="sm"
+          headline={lookup.status === 'found' ? 'MISSION FOUND' : 'JOIN THE FIGHT'}
+        />
       </div>
+      <ZoneDivider />
+      <div className="zone-content space-y-4">
 
-      {/* Code input — shown until a valid code is found */}
-      {lookup.status !== 'found' && (
-        <div className="card-retro space-y-4">
-          <p className="font-body text-slate/60 text-sm leading-relaxed">
-            Got an invite code from a buddy? Enter it below to view the challenge briefing.
-          </p>
-          <form onSubmit={handleCodeSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="inviteCode" className="label-retro">Invite Code</label>
-              <input
-                id="inviteCode"
-                type="text"
-                value={codeInput}
-                onChange={e => setCodeInput(e.target.value.toUpperCase())}
-                placeholder="e.g. AB1X4Z"
-                required
-                maxLength={6}
-                className="input-retro uppercase tracking-[0.3em] text-center text-lg"
-              />
-            </div>
-
-            {lookup.status === 'not_found' && (
-              <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 flex items-center gap-2">
-                <AlertCircle size={14} strokeWidth={2} />
-                Invite code not found. Check the code and try again.
-              </p>
-            )}
-            {lookup.status === 'error' && (
-              <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 flex items-center gap-2">
-                <AlertCircle size={14} strokeWidth={2} />
-                {lookup.message}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={codeInput.length !== 6 || lookup.status === 'loading'}
-              className="btn-retro w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {lookup.status === 'loading' ? 'Looking up...' : 'Look Up Challenge'}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Challenge briefing + goal form */}
-      {lookup.status === 'found' && (
-        <>
-          {/* Briefing card */}
-          <div className="card-retro space-y-3">
-            <div className="flex items-center gap-2 border-b border-slate/20 pb-3">
-              <FileText size={16} className="text-mustard" strokeWidth={1.8} />
-              <span className="font-display text-xs text-slate uppercase tracking-wider">
-                Mission Briefing
-              </span>
-            </div>
-            <h3 className="font-display text-xl text-slate uppercase leading-tight">
-              {lookup.challenge.name}
-            </h3>
-            {lookup.challenge.description && (
-              <p className="font-body text-slate/60 text-sm leading-relaxed">
-                {lookup.challenge.description}
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-1">
+        {/* Code input — shown until a valid code is found */}
+        {lookup.status !== 'found' && (
+          <div className="space-y-4">
+            <p className="font-body text-dark/60 text-sm leading-relaxed">
+              Got an invite code from a buddy? Enter it below to view the challenge briefing.
+            </p>
+            <form onSubmit={handleCodeSubmit} className="space-y-4">
               <div>
-                <p className="label-retro">Commander</p>
-                <p className="font-body text-slate text-sm">{lookup.challenge.creatorFirstName}</p>
-              </div>
-              <div>
-                <p className="label-retro">Duration</p>
-                <p className="font-body text-slate text-sm">
-                  {lookup.challenge.durationType === 'ongoing'
-                    ? 'Ongoing'
-                    : `${lookup.challenge.duration} days`}
-                </p>
-              </div>
-              <div>
-                <p className="label-retro">Proof</p>
-                <p className="font-body text-slate text-sm">
-                  {lookup.challenge.proofType === 'honor' ? 'Honor System' : 'Photo Required'}
-                </p>
-              </div>
-              <div>
-                <p className="label-retro">Recruits</p>
-                <p className="font-body text-slate text-sm">{lookup.challenge.memberCount}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Goal-setting form */}
-          <form onSubmit={e => void handleJoinSubmit(e)} className="card-retro space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate/20 pb-3">
-              <ArrowRight size={16} className="text-mustard" strokeWidth={1.8} />
-              <span className="font-display text-xs text-slate uppercase tracking-wider">
-                Set Your Mission
-              </span>
-            </div>
-
-            {submitError && (
-              <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2">
-                {submitError}
-              </p>
-            )}
-
-            <div>
-              <label htmlFor="personalGoal" className="label-retro">Your Goal</label>
-              <input
-                id="personalGoal"
-                type="text"
-                value={personalGoal}
-                onChange={e => setPersonalGoal(e.target.value)}
-                placeholder="e.g. Run 3 times per week"
-                required
-                autoFocus
-                className="input-retro"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="targetFrequency" className="label-retro">Target</label>
+                <label htmlFor="inviteCode" className="label-light">Invite Code</label>
                 <input
-                  id="targetFrequency"
-                  type="number"
-                  min="1"
-                  max="99"
-                  value={targetFrequency}
-                  onChange={e => setTargetFrequency(e.target.value)}
+                  id="inviteCode"
+                  type="text"
+                  value={codeInput}
+                  onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                  placeholder="e.g. AB1X4Z"
                   required
-                  className="input-retro"
+                  maxLength={6}
+                  className="input-light uppercase tracking-[0.3em] text-center text-lg"
                 />
               </div>
-              <div>
-                <label htmlFor="frequencyPeriod" className="label-retro">Period</label>
-                <select
-                  id="frequencyPeriod"
-                  value={frequencyPeriod}
-                  onChange={e => setFrequencyPeriod(e.target.value as typeof frequencyPeriod)}
-                  className="input-retro"
-                >
-                  <option value="per_day">Per Day</option>
-                  <option value="per_week">Per Week</option>
-                  <option value="per_month">Per Month</option>
-                </select>
+
+              {lookup.status === 'not_found' && (
+                <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl flex items-center gap-2">
+                  <AlertCircle size={14} strokeWidth={2} />
+                  Invite code not found. Check the code and try again.
+                </p>
+              )}
+              {lookup.status === 'error' && (
+                <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl flex items-center gap-2">
+                  <AlertCircle size={14} strokeWidth={2} />
+                  {lookup.message}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={codeInput.length !== 6 || lookup.status === 'loading'}
+                className="btn-retro w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {lookup.status === 'loading' ? 'Looking up...' : 'Look Up Challenge'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Challenge briefing + goal form */}
+        {lookup.status === 'found' && (
+          <>
+            {/* Briefing — flat content */}
+            <div className="space-y-2">
+              <h3 className="font-display text-xl text-dark uppercase leading-tight">
+                {lookup.challenge.name}
+              </h3>
+              {lookup.challenge.description && (
+                <p className="font-body text-dark/60 text-sm leading-relaxed">
+                  {lookup.challenge.description}
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                <div>
+                  <p className="label-light">Commander</p>
+                  <p className="font-body text-dark text-sm">{lookup.challenge.creatorFirstName}</p>
+                </div>
+                <div>
+                  <p className="label-light">Duration</p>
+                  <p className="font-body text-dark text-sm">
+                    {lookup.challenge.durationType === 'ongoing'
+                      ? 'Ongoing'
+                      : `${lookup.challenge.duration} days`}
+                  </p>
+                </div>
+                <div>
+                  <p className="label-light">Proof</p>
+                  <p className="font-body text-dark text-sm">
+                    {lookup.challenge.proofType === 'honor' ? 'Honor System' : 'Photo Required'}
+                  </p>
+                </div>
+                <div>
+                  <p className="label-light">Recruits</p>
+                  <p className="font-body text-dark text-sm">{lookup.challenge.memberCount}</p>
+                </div>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting || !personalGoal.trim()}
-              className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Enlisting...' : (
-                <>Enlist in Mission <ArrowRight size={14} /></>
+            {/* Goal-setting form */}
+            <form onSubmit={e => void handleJoinSubmit(e)} className="space-y-4 border-t border-dark/10 pt-4">
+              <p className="label-light mb-0">Set Your Mission</p>
+
+              {submitError && (
+                <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl">
+                  {submitError}
+                </p>
               )}
-            </button>
-          </form>
-        </>
-      )}
-    </section>
+
+              <div>
+                <label htmlFor="personalGoal" className="label-light">Your Goal</label>
+                <input
+                  id="personalGoal"
+                  type="text"
+                  value={personalGoal}
+                  onChange={e => setPersonalGoal(e.target.value)}
+                  placeholder="e.g. Run 3 times per week"
+                  required
+                  autoFocus
+                  className="input-light"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="targetFrequency" className="label-light">Target</label>
+                  <input
+                    id="targetFrequency"
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={targetFrequency}
+                    onChange={e => setTargetFrequency(e.target.value)}
+                    required
+                    className="input-light"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="frequencyPeriod" className="label-light">Period</label>
+                  <select
+                    id="frequencyPeriod"
+                    value={frequencyPeriod}
+                    onChange={e => setFrequencyPeriod(e.target.value as typeof frequencyPeriod)}
+                    className="input-light"
+                  >
+                    <option value="per_day">Per Day</option>
+                    <option value="per_week">Per Week</option>
+                    <option value="per_month">Per Month</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || !personalGoal.trim()}
+                className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Enlisting...' : (
+                  <>Enlist in Mission <ArrowRight size={14} /></>
+                )}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
   )
 }

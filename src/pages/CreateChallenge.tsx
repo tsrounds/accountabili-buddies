@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { PlusCircle, Share2, Copy, Check, ArrowRight, Dumbbell, DollarSign, Heart, BookOpen, Leaf, Utensils, Moon, Target } from 'lucide-react'
+import { Share2, Copy, Check, ArrowRight, Dumbbell, DollarSign, Heart, BookOpen, Leaf, Utensils, Moon, Target } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface ChallengeType {
@@ -23,6 +23,8 @@ import { collection, addDoc, setDoc, doc, serverTimestamp, updateDoc } from 'fir
 import { useNavigate } from 'react-router-dom'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -162,111 +164,100 @@ export default function CreateChallenge() {
   // ── Goal-setting step (after challenge created, before invite) ───────────
   if (share && goalStep) {
     return (
-      <section className="space-y-5">
-        <div className="flex items-center gap-2">
-          <Target size={22} className="text-mustard" strokeWidth={1.5} />
-          <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-            Set Your Mission
-          </h2>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center">
+          <MascotZone mood="idle" size="sm" headline="SET YOUR GOAL" />
         </div>
-
-        <form onSubmit={e => void handleGoalSubmit(e)} className="card-retro space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate/20 pb-3">
-            <ArrowRight size={16} className="text-mustard" strokeWidth={1.8} />
-            <span className="font-display text-xs text-slate uppercase tracking-wider">
-              Your Personal Goal
-            </span>
-          </div>
-
-          <p className="font-body text-slate/60 text-sm leading-relaxed">
-            Mission created! Before sharing the invite, set your own goal for{' '}
-            <span className="font-semibold text-slate">{share.challengeName}</span>.
+        <ZoneDivider />
+        <div className="zone-content space-y-4">
+          <p className="font-body text-dark/60 text-sm leading-relaxed">
+            Before sharing the invite, set your own goal for{' '}
+            <span className="font-semibold text-dark">{share.challengeName}</span>.
           </p>
 
           {goalError && (
-            <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2">
+            <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl">
               {goalError}
             </p>
           )}
 
-          <div>
-            <label htmlFor="personalGoal" className="label-retro">Your Goal</label>
-            <input
-              id="personalGoal"
-              type="text"
-              value={personalGoal}
-              onChange={e => setPersonalGoal(e.target.value)}
-              placeholder="e.g. Run 3 times per week"
-              required
-              autoFocus
-              className="input-retro"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={e => void handleGoalSubmit(e)} className="space-y-4">
             <div>
-              <label htmlFor="targetFrequency" className="label-retro">Target</label>
+              <label htmlFor="personalGoal" className="label-light">Your Goal</label>
               <input
-                id="targetFrequency"
-                type="number"
-                min="1"
-                max="99"
-                value={targetFrequency}
-                onChange={e => setTargetFrequency(e.target.value)}
+                id="personalGoal"
+                type="text"
+                value={personalGoal}
+                onChange={e => setPersonalGoal(e.target.value)}
+                placeholder="e.g. Run 3 times per week"
                 required
-                className="input-retro"
+                autoFocus
+                className="input-light"
               />
             </div>
-            <div>
-              <label htmlFor="frequencyPeriod" className="label-retro">Period</label>
-              <select
-                id="frequencyPeriod"
-                value={frequencyPeriod}
-                onChange={e => setFrequencyPeriod(e.target.value as typeof frequencyPeriod)}
-                className="input-retro"
-              >
-                <option value="per_day">Per Day</option>
-                <option value="per_week">Per Week</option>
-                <option value="per_month">Per Month</option>
-              </select>
-            </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={goalSubmitting || !personalGoal.trim()}
-            className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {goalSubmitting ? 'Saving...' : (
-              <>Save Goal &amp; Get Invite Code <ArrowRight size={14} /></>
-            )}
-          </button>
-        </form>
-      </section>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="targetFrequency" className="label-light">Target</label>
+                <input
+                  id="targetFrequency"
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={targetFrequency}
+                  onChange={e => setTargetFrequency(e.target.value)}
+                  required
+                  className="input-light"
+                />
+              </div>
+              <div>
+                <label htmlFor="frequencyPeriod" className="label-light">Period</label>
+                <select
+                  id="frequencyPeriod"
+                  value={frequencyPeriod}
+                  onChange={e => setFrequencyPeriod(e.target.value as typeof frequencyPeriod)}
+                  className="input-light"
+                >
+                  <option value="per_day">Per Day</option>
+                  <option value="per_week">Per Week</option>
+                  <option value="per_month">Per Month</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={goalSubmitting || !personalGoal.trim()}
+              className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {goalSubmitting ? 'Saving...' : (
+                <>Save Goal &amp; Get Invite Code <ArrowRight size={14} /></>
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
     )
   }
 
   // ── Share screen ─────────────────────────────────────────────────────────
   if (share) {
     return (
-      <section className="space-y-5">
-        <div className="flex items-center gap-2">
-          <Share2 size={22} className="text-mustard" strokeWidth={1.5} />
-          <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-            Mission Created
-          </h2>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center">
+          <MascotZone mood="celebrate" size="sm" headline="MISSION CREATED" />
         </div>
-
-        <div className="card-retro space-y-4 text-center">
-          <p className="font-body text-slate/70 text-sm leading-relaxed">
+        <ZoneDivider />
+        <div className="zone-content space-y-4">
+          <p className="font-body text-dark/60 text-sm leading-relaxed text-center">
             Your mission is ready. Enlist your buddies with this invite code.
           </p>
 
-          <div className="border-2 border-mustard/40 bg-mustard/5 py-5">
-            <p className="font-display text-3xl text-mustard tracking-[0.4em] uppercase">
+          <div className="card-light text-center py-5 space-y-2">
+            <p className="font-display text-3xl text-dark tracking-[0.4em] uppercase">
               {share.code}
             </p>
-            <p className="font-body text-slate/40 text-xs mt-2 break-all px-4">
+            <p className="font-body text-dark/40 text-xs break-all px-4">
               {share.inviteUrl}
             </p>
           </div>
@@ -280,184 +271,189 @@ export default function CreateChallenge() {
               Share Invite Link
             </button>
             <button
-              className="btn-outline w-full gap-2"
+              className="inline-flex items-center justify-center gap-2 w-full px-7 py-3.5
+                         bg-dark text-cream font-body text-base uppercase tracking-wider
+                         rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
+                         transition-all duration-150 hover:bg-dark/80"
               onClick={() => void handleCopy()}
             >
               {copied ? <Check size={16} strokeWidth={2} /> : <Copy size={16} strokeWidth={1.8} />}
               {copied ? 'Copied!' : 'Copy Link'}
             </button>
           </div>
-        </div>
 
-        <button
-          className="btn-outline w-full gap-2"
-          onClick={() => navigate(`/challenge/${share.challengeId}`)}
-        >
-          <ArrowRight size={16} strokeWidth={1.8} />
-          View Mission Briefing
-        </button>
-      </section>
+          <button
+            className="inline-flex items-center justify-center gap-2 w-full px-7 py-3.5
+                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
+                       transition-all duration-150 hover:bg-dark/80"
+            onClick={() => navigate(`/challenge/${share.challengeId}`)}
+          >
+            <ArrowRight size={16} strokeWidth={1.8} />
+            View Mission Briefing
+          </button>
+        </div>
+      </div>
     )
   }
 
   // ── Create form ──────────────────────────────────────────────────────────
   return (
-    <section className="space-y-5">
-      <div className="flex items-center gap-2">
-        <PlusCircle size={22} className="text-mustard" strokeWidth={1.5} />
-        <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-          New Mission
-        </h2>
+    <div className="flex flex-col">
+      <div className="zone-hero-compact pb-4 flex flex-col items-center">
+        <MascotZone mood="idle" size="sm" headline="BUILD YOUR MISSION" />
       </div>
+      <ZoneDivider />
+      <div className="zone-content">
+        {error && (
+          <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl mb-4">
+            {error}
+          </p>
+        )}
 
-      {error && (
-        <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2">
-          {error}
-        </p>
-      )}
-
-      <form onSubmit={e => void handleSubmit(e)} className="card-retro space-y-4">
-        {/* Challenge name */}
-        <div>
-          <label htmlFor="name" className="label-retro">Mission Name</label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="e.g. 30-Day Push-Up Challenge"
-            required
-            className="input-retro"
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="label-retro">Description (optional)</label>
-          <textarea
-            id="description"
-            rows={3}
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Describe the rules and goal..."
-            className="input-retro resize-none"
-          />
-        </div>
-
-        {/* Challenge type */}
-        <div>
-          <p className="label-retro">Challenge Type</p>
-          <div className="grid grid-cols-4 gap-2 mt-1">
-            {CHALLENGE_TYPES.map(({ key, label, Icon }) => {
-              const selected = category === key
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setCategory(selected ? '' : key)}
-                  className={[
-                    'flex flex-col items-center gap-1.5 py-3 border-2 transition-colors duration-100',
-                    selected
-                      ? 'border-mustard bg-mustard/10 text-slate'
-                      : 'border-slate/20 bg-cream/60 text-slate/50 hover:border-slate/40',
-                  ].join(' ')}
-                >
-                  <Icon size={20} strokeWidth={1.5} className={selected ? 'text-mustard' : undefined} />
-                  <span className="font-display text-[9px] uppercase tracking-wide leading-none">
-                    {label}
-                  </span>
-                </button>
-              )
-            })}
+        <form onSubmit={e => void handleSubmit(e)} className="space-y-4">
+          {/* Challenge name */}
+          <div>
+            <label htmlFor="name" className="label-light">Mission Name</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. 30-Day Push-Up Challenge"
+              required
+              className="input-light"
+            />
           </div>
-        </div>
 
-        {/* Duration */}
-        <div>
-          <label htmlFor="duration" className="label-retro">Duration</label>
-          <select
-            id="duration"
-            value={duration}
-            onChange={e => setDuration(e.target.value)}
-            required
-            className="input-retro"
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="label-light">Description (optional)</label>
+            <textarea
+              id="description"
+              rows={3}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Describe the rules and goal..."
+              className="input-light resize-none"
+            />
+          </div>
+
+          {/* Challenge type */}
+          <div>
+            <p className="label-light">Challenge Type</p>
+            <div className="grid grid-cols-4 gap-2 mt-1">
+              {CHALLENGE_TYPES.map(({ key, label, Icon }) => {
+                const selected = category === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setCategory(selected ? '' : key)}
+                    className={[
+                      'flex flex-col items-center gap-1.5 py-3 border-2 rounded-2xl transition-colors duration-100',
+                      selected
+                        ? 'border-neon bg-neon/15 text-dark'
+                        : 'border-dark/12 bg-white/50 text-dark/50 hover:border-dark/25',
+                    ].join(' ')}
+                  >
+                    <Icon size={20} strokeWidth={1.5} className={selected ? 'text-neon' : undefined} />
+                    <span className="font-display text-[9px] uppercase tracking-wide leading-none">
+                      {label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <label htmlFor="duration" className="label-light">Duration</label>
+            <select
+              id="duration"
+              value={duration}
+              onChange={e => setDuration(e.target.value)}
+              required
+              className="input-light"
+            >
+              <option value="">Select duration...</option>
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+              <option value="60">60 days</option>
+              <option value="90">90 days</option>
+              <option value="ongoing">Ongoing</option>
+            </select>
+          </div>
+
+          {/* Proof type */}
+          <div>
+            <p className="label-light">Proof Required</p>
+            <div className="flex gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="proofType"
+                  value="honor"
+                  checked={proofType === 'honor'}
+                  onChange={() => setProofType('honor')}
+                  className="accent-neon"
+                />
+                <span className="font-body text-sm text-dark">Honor System</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="proofType"
+                  value="photo"
+                  checked={proofType === 'photo'}
+                  onChange={() => setProofType('photo')}
+                  className="accent-neon"
+                />
+                <span className="font-body text-sm text-dark">Photo Required</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <p className="label-light">Visibility</p>
+            <div className="flex gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="private"
+                  checked={visibility === 'private'}
+                  onChange={() => setVisibility('private')}
+                  className="accent-neon"
+                />
+                <span className="font-body text-sm text-dark">Private</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="public"
+                  checked={visibility === 'public'}
+                  onChange={() => setVisibility('public')}
+                  className="accent-neon"
+                />
+                <span className="font-body text-sm text-dark">Public</span>
+              </label>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-retro w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">Select duration...</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-            <option value="30">30 days</option>
-            <option value="60">60 days</option>
-            <option value="90">90 days</option>
-            <option value="ongoing">Ongoing</option>
-          </select>
-        </div>
-
-        {/* Proof type */}
-        <div>
-          <p className="label-retro">Proof Required</p>
-          <div className="flex gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="proofType"
-                value="honor"
-                checked={proofType === 'honor'}
-                onChange={() => setProofType('honor')}
-                className="accent-mustard"
-              />
-              <span className="font-body text-sm text-slate">Honor System</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="proofType"
-                value="photo"
-                checked={proofType === 'photo'}
-                onChange={() => setProofType('photo')}
-                className="accent-mustard"
-              />
-              <span className="font-body text-sm text-slate">Photo Required</span>
-            </label>
-          </div>
-        </div>
-
-        {/* Visibility */}
-        <div>
-          <p className="label-retro">Visibility</p>
-          <div className="flex gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="visibility"
-                value="private"
-                checked={visibility === 'private'}
-                onChange={() => setVisibility('private')}
-                className="accent-mustard"
-              />
-              <span className="font-body text-sm text-slate">Private</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="visibility"
-                value="public"
-                checked={visibility === 'public'}
-                onChange={() => setVisibility('public')}
-                className="accent-mustard"
-              />
-              <span className="font-body text-sm text-slate">Public</span>
-            </label>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="btn-retro w-full disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? 'Creating Mission...' : 'Create Mission'}
-        </button>
-      </form>
-    </section>
+            {submitting ? 'Creating Mission...' : 'Create Mission'}
+          </button>
+        </form>
+      </div>
+    </div>
   )
 }

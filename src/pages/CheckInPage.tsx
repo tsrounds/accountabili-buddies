@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CheckCircle, Zap, AlertCircle, ArrowLeft } from 'lucide-react'
+import { CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react'
 import {
   doc,
   getDoc,
@@ -15,6 +15,8 @@ import {
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import { sendCheckinBlast } from '@/lib/notifications'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
 
 function todayStr(): string {
   const d = new Date()
@@ -150,10 +152,16 @@ export default function CheckInPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="font-display text-slate/50 uppercase tracking-widest text-sm animate-pulse">
-          Loading...
-        </p>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center gap-3">
+          <div className="skeleton w-24 h-24 rounded-full" />
+          <div className="skeleton w-48 h-6 rounded-xl" />
+        </div>
+        <ZoneDivider />
+        <div className="zone-content space-y-3">
+          <div className="skeleton h-20 rounded-2xl" />
+          <div className="skeleton h-12 rounded-full" />
+        </div>
       </div>
     )
   }
@@ -162,94 +170,90 @@ export default function CheckInPage() {
 
   if (alreadyDone) {
     return (
-      <section className="space-y-5">
-        <div className="flex items-center gap-2">
-          <Zap size={22} className="text-mustard" strokeWidth={1.5} fill="#D4A017" />
-          <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-            Check-In
-          </h2>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center">
+          <MascotZone mood="proud" size="sm" headline="MISSION LOGGED" />
         </div>
-        <div className="card-retro text-center py-10 space-y-3">
-          <CheckCircle size={36} className="mx-auto text-olive" strokeWidth={1.5} />
-          <p className="font-display text-slate uppercase tracking-wider text-sm">
-            Already Logged Today
-          </p>
-          <p className="font-body text-slate/50 text-xs">
+        <ZoneDivider />
+        <div className="zone-content flex flex-col items-center text-center space-y-4 py-4">
+          <CheckCircle size={36} className="text-teal" strokeWidth={1.5} />
+          <p className="font-body text-dark/50 text-sm">
             Come back tomorrow, soldier.
           </p>
           <button
-            className="btn-outline gap-2 mt-2"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5
+                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
+                       transition-all duration-150 hover:bg-dark/80"
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ArrowLeft size={15} strokeWidth={1.8} />
             Back to Mission
           </button>
         </div>
-      </section>
+      </div>
     )
   }
 
   // ── Check-in form ─────────────────────────────────────────────────────────
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center gap-2">
-        <Zap size={22} className="text-mustard" strokeWidth={1.5} />
-        <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-          Check-In
-        </h2>
-      </div>
-
-      <div className="card-retro py-3">
-        <p className="font-display text-xs text-slate/40 uppercase tracking-wider">
-          {challengeName}
-        </p>
-        {personalGoal && (
-          <p className="font-body text-slate text-sm mt-1">{personalGoal}</p>
+    <div className="flex flex-col">
+      <div className="zone-hero-compact pb-4 flex flex-col items-center">
+        <MascotZone mood="lagging" size="sm" headline="TIME TO SHOW UP" />
+        {challengeName && (
+          <p className="font-body text-cream/50 text-sm mt-1">{challengeName}</p>
         )}
-        <p className="font-body text-slate/40 text-xs mt-1">{today}</p>
+        {personalGoal && (
+          <p className="font-body text-cream/30 text-xs mt-0.5">{personalGoal}</p>
+        )}
       </div>
+      <ZoneDivider />
+      <div className="zone-content space-y-4">
+        {error && (
+          <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl flex items-center gap-2">
+            <AlertCircle size={14} strokeWidth={2} />
+            {error}
+          </p>
+        )}
 
-      {error && (
-        <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 flex items-center gap-2">
-          <AlertCircle size={14} strokeWidth={2} />
-          {error}
-        </p>
-      )}
+        <form onSubmit={e => void handleSubmit(e)} className="space-y-4">
+          <div>
+            <label htmlFor="note" className="label-light">
+              Note (optional)
+            </label>
+            <textarea
+              id="note"
+              rows={3}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="What did you do? Any victories or struggles to report..."
+              className="input-light resize-none"
+            />
+          </div>
 
-      <form onSubmit={e => void handleSubmit(e)} className="card-retro space-y-4">
-        <div>
-          <label htmlFor="note" className="label-retro">
-            Note (optional)
-          </label>
-          <textarea
-            id="note"
-            rows={3}
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="What did you do? Any victories or struggles to report..."
-            className="input-retro resize-none"
-          />
-        </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <CheckCircle size={15} strokeWidth={2} />
+            {submitting ? 'Logging...' : 'Log Check-In'}
+          </button>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <CheckCircle size={15} strokeWidth={2} />
-          {submitting ? 'Logging...' : 'Log Check-In'}
-        </button>
-
-        <button
-          type="button"
-          className="btn-outline w-full gap-2"
-          onClick={() => navigate(`/challenge/${id}`)}
-        >
-          <ArrowLeft size={15} strokeWidth={1.8} />
-          Cancel
-        </button>
-      </form>
-    </section>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-2 w-full px-7 py-3.5
+                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
+                       transition-all duration-150 hover:bg-dark/80"
+            onClick={() => navigate(`/challenge/${id}`)}
+          >
+            <ArrowLeft size={15} strokeWidth={1.8} />
+            Cancel
+          </button>
+        </form>
+      </div>
+    </div>
   )
 }

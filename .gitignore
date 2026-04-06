@@ -4,6 +4,7 @@ functions/node_modules/
 
 # Build output
 dist/
+functions/lib/
 
 # Firebase
 .firebase/

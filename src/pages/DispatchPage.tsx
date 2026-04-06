@@ -4,6 +4,8 @@ import { collectionGroup, query, where, getDocs, collection, getDoc, doc } from 
 import type { DocumentReference, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
 
 interface LeaderboardEntry {
   uid: string
@@ -76,7 +78,6 @@ export default function DispatchPage() {
         }
 
         // Fetch dispatches for this week across all user's challenges
-        // Firestore 'in' operator supports up to 30 values
         const chunks: string[][] = []
         for (let i = 0; i < challengeIds.length; i += 30) {
           chunks.push(challengeIds.slice(i, i + 30))
@@ -140,161 +141,148 @@ export default function DispatchPage() {
   }, [currentUser])
 
   return (
-    <section className="space-y-6">
-      {/* Header */}
-      <div className="border-b-2 border-slate pb-4 text-center">
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <Newspaper size={18} className="text-mustard" strokeWidth={1.5} />
-          <p className="font-display text-[10px] text-slate/40 uppercase tracking-[0.2em]">
-            Official Intelligence Report
-          </p>
-          <Newspaper size={18} className="text-mustard" strokeWidth={1.5} />
-        </div>
-        <h2 className="font-display text-3xl text-slate uppercase tracking-widest leading-none">
-          Weekly Dispatch
-        </h2>
+    <div className="flex flex-col">
+      <div className="zone-hero-compact pb-4 flex flex-col items-center">
+        <MascotZone mood="idle" size="sm" headline="WEEKLY DISPATCH" />
         {weekId && (
-          <p className="font-body text-slate/40 text-xs mt-1 uppercase tracking-wider">
+          <p className="font-body text-cream/50 text-xs uppercase tracking-wider mt-1">
             {weekId}
           </p>
         )}
-        <div className="mt-3 border-t border-b border-slate/20 py-1">
-          <p className="font-body text-[10px] text-slate/30 uppercase tracking-widest">
-            All field reports. All missions. No excuses.
-          </p>
-        </div>
       </div>
+      <ZoneDivider />
+      <div className="zone-content">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <p className="font-display text-dark/50 uppercase tracking-widest text-sm animate-pulse">
+              Decrypting...
+            </p>
+          </div>
+        ) : dispatches.length === 0 ? (
+          <div className="flex flex-col items-center text-center py-12 space-y-3">
+            <Newspaper size={32} className="text-dark/20" strokeWidth={1.5} />
+            <p className="font-display text-dark/40 uppercase tracking-wider text-sm">
+              No dispatches yet.
+            </p>
+            <p className="font-body text-dark/30 text-xs max-w-xs">
+              Dispatches are generated Sunday evening. Check back after your first full week of missions.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {dispatches.map((dispatch) => {
+              const myEntry = dispatch.leaderboard.find((e) => e.uid === currentUser?.uid)
+              const myRank = dispatch.leaderboard.findIndex((e) => e.uid === currentUser?.uid) + 1
+              const leader = dispatch.leaderboard[0]
 
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <p className="font-display text-slate/50 uppercase tracking-widest text-sm animate-pulse">
-            Decrypting...
-          </p>
-        </div>
-      ) : dispatches.length === 0 ? (
-        <div className="card-retro text-center py-12 space-y-3">
-          <Newspaper size={32} className="mx-auto text-slate/20" strokeWidth={1.5} />
-          <p className="font-display text-slate/40 uppercase tracking-wider text-sm">
-            No dispatches yet.
-          </p>
-          <p className="font-body text-slate/30 text-xs max-w-xs mx-auto">
-            Dispatches are generated Sunday evening. Check back after your first full week of missions.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {dispatches.map((dispatch) => {
-            const myEntry = dispatch.leaderboard.find((e) => e.uid === currentUser?.uid)
-            const myRank = dispatch.leaderboard.findIndex((e) => e.uid === currentUser?.uid) + 1
-            const leader = dispatch.leaderboard[0]
-
-            return (
-              <article key={dispatch.dispatchId} className="space-y-3">
-                {/* Mission header */}
-                <div className="border-b-2 border-slate/30 pb-2">
-                  <p className="font-display text-[9px] text-slate/30 uppercase tracking-widest">
-                    Mission Report
-                  </p>
-                  <h3 className="font-display text-xl text-slate uppercase tracking-wide leading-tight">
-                    {dispatch.challengeName}
-                  </h3>
-                  {dispatch.weekStart && dispatch.weekEnd && (
-                    <p className="font-body text-[10px] text-slate/40 mt-0.5">
-                      {formatWeekRange(dispatch.weekStart, dispatch.weekEnd)}
+              return (
+                <article key={dispatch.dispatchId} className="space-y-3">
+                  {/* Mission header */}
+                  <div className="border-b border-dark/15 pb-2">
+                    <p className="font-display text-[9px] text-dark/30 uppercase tracking-widest">
+                      Mission Report
                     </p>
-                  )}
-                </div>
-
-                {/* My standing */}
-                {myEntry && (
-                  <div className="bg-mustard/10 border border-mustard/30 px-3 py-2">
-                    <p className="font-display text-[9px] text-slate/40 uppercase tracking-widest mb-1">
-                      Your Standing
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-display text-slate text-base">
-                          #{myRank} of {dispatch.totalMembers}
-                        </span>
-                        <span className="font-body text-slate/50 text-xs ml-2">
-                          {myEntry.weekCheckins > 0
-                            ? `${myEntry.weekCheckins} check-in${myEntry.weekCheckins !== 1 ? 's' : ''} this week`
-                            : 'No check-ins this week'}
-                        </span>
-                      </div>
-                      <Trophy
-                        size={18}
-                        strokeWidth={1.5}
-                        className={myRank === 1 ? 'text-mustard' : 'text-slate/20'}
-                        fill={myRank === 1 ? '#D4A017' : 'none'}
-                      />
-                    </div>
-                    {myRank > 1 && leader && (
-                      <p className="font-body text-xs text-slate/40 mt-1">
-                        {leader.firstName} leads with {leader.totalCheckins} total.{' '}
-                        {myEntry.totalCheckins < leader.totalCheckins
-                          ? `You're ${leader.totalCheckins - myEntry.totalCheckins} behind.`
-                          : ''}
+                    <h3 className="font-display text-xl text-dark uppercase tracking-wide leading-tight">
+                      {dispatch.challengeName}
+                    </h3>
+                    {dispatch.weekStart && dispatch.weekEnd && (
+                      <p className="font-body text-[10px] text-dark/40 mt-0.5">
+                        {formatWeekRange(dispatch.weekStart, dispatch.weekEnd)}
                       </p>
                     )}
                   </div>
-                )}
 
-                {/* Full leaderboard */}
-                <div className="card-retro p-0 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-slate/10 bg-slate/5">
-                    <p className="font-display text-[9px] text-slate/40 uppercase tracking-widest">
-                      Full Rankings
-                    </p>
-                  </div>
-                  <ul className="divide-y divide-slate/5">
-                    {dispatch.leaderboard.map((entry, idx) => (
-                      <li
-                        key={entry.uid}
-                        className={[
-                          'flex items-center gap-3 px-3 py-2.5',
-                          entry.uid === currentUser?.uid ? 'bg-mustard/5' : '',
-                        ].join(' ')}
-                      >
-                        <span className="font-display text-xs text-slate/30 w-5 text-right flex-shrink-0">
-                          {idx + 1}
-                        </span>
-                        <Zap
-                          size={14}
+                  {/* My standing */}
+                  {myEntry && (
+                    <div className="card-light">
+                      <p className="font-display text-[9px] text-dark/40 uppercase tracking-widest mb-1">
+                        Your Standing
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-display text-dark text-base">
+                            #{myRank} of {dispatch.totalMembers}
+                          </span>
+                          <span className="font-body text-dark/50 text-xs ml-2">
+                            {myEntry.weekCheckins > 0
+                              ? `${myEntry.weekCheckins} check-in${myEntry.weekCheckins !== 1 ? 's' : ''} this week`
+                              : 'No check-ins this week'}
+                          </span>
+                        </div>
+                        <Trophy
+                          size={18}
                           strokeWidth={1.5}
-                          className={entry.weekCheckins > 0 ? 'text-mustard flex-shrink-0' : 'text-slate/20 flex-shrink-0'}
-                          fill={entry.weekCheckins > 0 ? '#D4A017' : 'none'}
+                          className={myRank === 1 ? 'text-neon' : 'text-dark/20'}
+                          fill={myRank === 1 ? '#E7F53C' : 'none'}
                         />
-                        <div className="flex-1 min-w-0">
-                          <span className="font-display text-slate text-sm">
-                            {entry.firstName}
-                            {entry.uid === currentUser?.uid && (
-                              <span className="ml-1 font-body text-[9px] text-mustard uppercase tracking-wider">
-                                (you)
+                      </div>
+                      {myRank > 1 && leader && (
+                        <p className="font-body text-xs text-dark/40 mt-1">
+                          {leader.firstName} leads with {leader.totalCheckins} total.{' '}
+                          {myEntry.totalCheckins < leader.totalCheckins
+                            ? `You're ${leader.totalCheckins - myEntry.totalCheckins} behind.`
+                            : ''}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Full leaderboard */}
+                  <div className="card-light p-0 overflow-hidden">
+                    <div className="px-3 py-2 border-b border-dark/8">
+                      <p className="font-display text-[9px] text-dark/40 uppercase tracking-widest">
+                        Full Rankings
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-dark/5">
+                      {dispatch.leaderboard.map((entry, idx) => (
+                        <li
+                          key={entry.uid}
+                          className={[
+                            'flex items-center gap-3 px-3 py-2.5',
+                            entry.uid === currentUser?.uid ? 'bg-neon/10' : '',
+                          ].join(' ')}
+                        >
+                          <span className="font-display text-xs text-dark/30 w-5 text-right flex-shrink-0">
+                            {idx + 1}
+                          </span>
+                          <Zap
+                            size={14}
+                            strokeWidth={1.5}
+                            className={entry.weekCheckins > 0 ? 'text-neon flex-shrink-0' : 'text-dark/20 flex-shrink-0'}
+                            fill={entry.weekCheckins > 0 ? '#E7F53C' : 'none'}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <span className="font-display text-dark text-sm">
+                              {entry.firstName}
+                              {entry.uid === currentUser?.uid && (
+                                <span className="ml-1 font-body text-[9px] text-neon uppercase tracking-wider">
+                                  (you)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <span className="font-display text-dark text-sm">
+                              {entry.totalCheckins}
+                            </span>
+                            <span className="font-body text-dark/30 text-[10px] ml-1">total</span>
+                            {entry.weekCheckins > 0 && (
+                              <span className="block font-body text-[9px] text-neon">
+                                +{entry.weekCheckins} this week
                               </span>
                             )}
-                          </span>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="font-display text-slate text-sm">
-                            {entry.totalCheckins}
-                          </span>
-                          <span className="font-body text-slate/30 text-[10px] ml-1">total</span>
-                          {entry.weekCheckins > 0 && (
-                            <span className="block font-body text-[9px] text-mustard">
-                              +{entry.weekCheckins} this week
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </article>
-            )
-          })}
-        </div>
-      )}
-    </section>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FileText, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react'
+import { ChevronRight, AlertCircle, CheckCircle } from 'lucide-react'
 import {
   doc,
   getDoc,
@@ -13,6 +13,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
 
 interface Buddy {
   uid: string
@@ -112,166 +114,171 @@ export default function DossierPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="font-display text-slate/50 uppercase tracking-widest text-sm animate-pulse">
-          Loading...
-        </p>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center gap-3">
+          <div className="skeleton w-24 h-24 rounded-full" />
+          <div className="skeleton w-48 h-6 rounded-xl" />
+        </div>
+        <ZoneDivider />
+        <div className="zone-content space-y-3">
+          <div className="skeleton h-20 rounded-2xl" />
+          <div className="skeleton h-20 rounded-2xl" />
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="card-retro text-center py-8">
-        <p className="font-body text-retro-red text-sm">{error}</p>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center">
+          <MascotZone mood="idle" size="sm" headline="SPILL THE BEANS" />
+        </div>
+        <ZoneDivider />
+        <div className="zone-content">
+          <div className="card-light text-center py-8">
+            <p className="font-body text-retro-red text-sm">{error}</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (alreadyDone) {
     return (
-      <section className="space-y-5">
-        <div className="flex items-center gap-2">
-          <FileText size={22} className="text-mustard" strokeWidth={1.5} />
-          <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-            Roast Dossier
-          </h2>
+      <div className="flex flex-col">
+        <div className="zone-hero-compact pb-4 flex flex-col items-center">
+          <MascotZone mood="proud" size="sm" headline="DOSSIER ON FILE" />
         </div>
-        <div className="card-retro text-center py-10 space-y-3">
-          <CheckCircle size={32} className="mx-auto text-olive" strokeWidth={1.5} />
-          <p className="font-display text-slate uppercase tracking-wider text-sm">
-            Dossier Filed
-          </p>
-          <p className="font-body text-slate/50 text-xs">
+        <ZoneDivider />
+        <div className="zone-content flex flex-col items-center text-center space-y-4 py-4">
+          <CheckCircle size={32} className="text-teal" strokeWidth={1.5} />
+          <p className="font-body text-dark/50 text-sm">
             Your intel has been recorded.
           </p>
           <button
-            className="btn-outline gap-2 mt-2"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5
+                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
+                       transition-all duration-150 hover:bg-dark/80"
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ChevronRight size={15} strokeWidth={1.8} />
             Back to Mission
           </button>
         </div>
-      </section>
+      </div>
     )
   }
 
   const hasBuddies = buddies.length > 0
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center gap-2">
-        <FileText size={22} className="text-mustard" strokeWidth={1.5} />
-        <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-          Roast Dossier
-        </h2>
-      </div>
-
-      <div className="card-retro py-3">
-        <p className="font-body text-slate/60 text-sm leading-relaxed">
-          This intel will be used to keep your squad honest.{' '}
-          <span className="font-semibold text-slate">Your buddies will see it.</span>
-        </p>
-        <p className="font-display text-xs text-slate/40 uppercase tracking-wider mt-1">
+    <div className="flex flex-col">
+      <div className="zone-hero-compact pb-4 flex flex-col items-center">
+        <MascotZone mood="idle" size="sm" headline="SPILL THE BEANS" />
+        <p className="font-body text-cream/40 text-xs uppercase tracking-wider mt-1">
           Mission: {challengeName}
         </p>
       </div>
-
-      {submitError && (
-        <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 flex items-center gap-2">
-          <AlertCircle size={14} strokeWidth={2} />
-          {submitError}
+      <ZoneDivider />
+      <div className="zone-content space-y-4">
+        <p className="font-body text-dark/60 text-sm leading-relaxed">
+          This intel will be used to keep your squad honest.{' '}
+          <span className="font-semibold text-dark">Your buddies will see it.</span>
         </p>
-      )}
 
-      <form onSubmit={e => void handleSubmit(e)} className="space-y-5">
+        {submitError && (
+          <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl flex items-center gap-2">
+            <AlertCircle size={14} strokeWidth={2} />
+            {submitError}
+          </p>
+        )}
 
-        {/* ── Section 1: Self-Intel ── */}
-        <div className="card-retro space-y-4">
-          <div className="border-b border-slate/20 pb-2">
-            <p className="font-display text-xs text-slate uppercase tracking-wider">
-              Your Self-Dossier
-            </p>
-            <p className="font-body text-slate/40 text-xs mt-0.5">
-              Dirt on yourself — your buddies will use this.
-            </p>
-          </div>
+        <form onSubmit={e => void handleSubmit(e)} className="space-y-4">
 
-          <div>
-            <label htmlFor="goToExcuse" className="label-retro">
-              Your Go-To Excuse
-            </label>
-            <input
-              id="goToExcuse"
-              type="text"
-              value={goToExcuse}
-              onChange={e => setGoToExcuse(e.target.value)}
-              placeholder='e.g. "I was too tired from work"'
-              required
-              className="input-retro"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="biggestWeakness" className="label-retro">
-              Biggest Weakness / Distraction
-            </label>
-            <input
-              id="biggestWeakness"
-              type="text"
-              value={biggestWeakness}
-              onChange={e => setBiggestWeakness(e.target.value)}
-              placeholder='e.g. "Late-night Netflix binges"'
-              required
-              className="input-retro"
-            />
-          </div>
-        </div>
-
-        {/* ── Section 2: Friend Intel ── */}
-        {hasBuddies && (
-          <div className="card-retro space-y-4">
-            <div className="border-b border-slate/20 pb-2">
-              <p className="font-display text-xs text-slate uppercase tracking-wider">
-                Intel on Your Buddies
-              </p>
-              <p className="font-body text-slate/40 text-xs mt-0.5">
-                One juicy fact per person — the more specific, the better.
+          {/* ── Section 1: Self-Intel ── */}
+          <div className="space-y-3">
+            <div>
+              <p className="label-light">Your Self-Dossier</p>
+              <p className="font-body text-dark/40 text-xs">
+                Dirt on yourself — your buddies will use this.
               </p>
             </div>
 
-            {buddies.map(buddy => (
-              <div key={buddy.uid}>
-                <label htmlFor={`intel-${buddy.uid}`} className="label-retro">
-                  {buddy.firstName}
-                </label>
-                <input
-                  id={`intel-${buddy.uid}`}
-                  type="text"
-                  value={friendIntel[buddy.uid] ?? ''}
-                  onChange={e =>
-                    setFriendIntel(prev => ({ ...prev, [buddy.uid]: e.target.value }))
-                  }
-                  placeholder={`Something embarrassing about ${buddy.firstName}...`}
-                  required
-                  className="input-retro"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+            <div>
+              <label htmlFor="goToExcuse" className="label-light">
+                Your Go-To Excuse
+              </label>
+              <input
+                id="goToExcuse"
+                type="text"
+                value={goToExcuse}
+                onChange={e => setGoToExcuse(e.target.value)}
+                placeholder='e.g. "I was too tired from work"'
+                required
+                className="input-light"
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? 'Filing Dossier...' : (
-            <>File Dossier <ChevronRight size={15} strokeWidth={2} /></>
+            <div>
+              <label htmlFor="biggestWeakness" className="label-light">
+                Biggest Weakness / Distraction
+              </label>
+              <input
+                id="biggestWeakness"
+                type="text"
+                value={biggestWeakness}
+                onChange={e => setBiggestWeakness(e.target.value)}
+                placeholder='e.g. "Late-night Netflix binges"'
+                required
+                className="input-light"
+              />
+            </div>
+          </div>
+
+          {/* ── Section 2: Friend Intel ── */}
+          {hasBuddies && (
+            <div className="space-y-3 border-t border-dark/10 pt-4">
+              <div>
+                <p className="label-light">Intel on Your Buddies</p>
+                <p className="font-body text-dark/40 text-xs">
+                  One juicy fact per person — the more specific, the better.
+                </p>
+              </div>
+
+              {buddies.map(buddy => (
+                <div key={buddy.uid}>
+                  <label htmlFor={`intel-${buddy.uid}`} className="label-light">
+                    {buddy.firstName}
+                  </label>
+                  <input
+                    id={`intel-${buddy.uid}`}
+                    type="text"
+                    value={friendIntel[buddy.uid] ?? ''}
+                    onChange={e =>
+                      setFriendIntel(prev => ({ ...prev, [buddy.uid]: e.target.value }))
+                    }
+                    placeholder={`Something embarrassing about ${buddy.firstName}...`}
+                    required
+                    className="input-light"
+                  />
+                </div>
+              ))}
+            </div>
           )}
-        </button>
-      </form>
-    </section>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Filing Dossier...' : (
+              <>File Dossier <ChevronRight size={15} strokeWidth={2} /></>
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
   )
 }

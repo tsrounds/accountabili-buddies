@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Flag, Users, Calendar, CheckCircle, Clock, FileText, Rocket,
-  Share2, Copy, Check, Zap, Trophy,
+  Users, Calendar, CheckCircle, FileText, Rocket,
+  Share2, Copy, Check, Zap, Trophy, Link2,
 } from 'lucide-react'
 import {
   doc, getDoc, getDocs, collection, updateDoc, serverTimestamp, query, where,
@@ -10,6 +10,11 @@ import {
 import type { Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
+import type { ComponentProps } from 'react'
+
+type MascotMood = ComponentProps<typeof MascotZone>['mood']
 
 function todayStr(): string {
   const d = new Date()
@@ -47,6 +52,8 @@ interface LeaderboardEntry {
   lastCheckinDate: string
 }
 
+const STAGGER = ['animate-slide-up', 'animate-slide-up-1', 'animate-slide-up-2', 'animate-slide-up-3', 'animate-slide-up-4']
+
 export default function ChallengeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -71,27 +78,18 @@ export default function ChallengeDetail() {
         getDocs(collection(db, 'ab_challenges', id, 'members')),
         getDocs(collection(db, 'ab_challenges', id, 'leaderboard')),
       ])
-      if (!challengeSnap.exists()) {
-        setError('Mission not found.')
-        return
-      }
+      if (!challengeSnap.exists()) { setError('Mission not found.'); return }
       setChallenge(challengeSnap.data() as Challenge)
       setMembers(membersSnap.docs.map(d => d.data() as Member))
       const lb = lbSnap.docs
         .map(d => d.data() as LeaderboardEntry)
         .sort((a, b) => b.totalCheckins - a.totalCheckins)
       setLeaderboard(lb)
-    } catch {
-      setError('Failed to load mission.')
-    } finally {
-      setLoading(false)
-    }
+    } catch { setError('Failed to load mission.') }
+    finally { setLoading(false) }
   }
 
-  useEffect(() => {
-    void loadData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  useEffect(() => { void loadData() }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!id || !challenge || challenge.status !== 'lobby') return
@@ -111,350 +109,351 @@ export default function ChallengeDetail() {
     if (!id) return
     setStarting(true)
     try {
-      await updateDoc(doc(db, 'ab_challenges', id), {
-        status: 'active',
-        startDate: serverTimestamp(),
-      })
+      await updateDoc(doc(db, 'ab_challenges', id), { status: 'active', startDate: serverTimestamp() })
       setChallenge(prev => prev ? { ...prev, status: 'active' } : prev)
-    } catch { /* silent */ } finally {
-      setStarting(false)
-    }
+    } catch { /* silent */ } finally { setStarting(false) }
   }
 
-  // ── Loading / Error ───────────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="font-display text-slate/50 uppercase tracking-widest text-sm animate-pulse">
-          Loading...
-        </p>
+      <div className="flex flex-col">
+        <div className="zone-hero pb-8 flex flex-col items-center gap-3">
+          <div className="skeleton w-44 h-44 rounded-full" />
+          <div className="skeleton w-64 h-10 rounded-xl" />
+          <div className="skeleton w-24 h-5 rounded-full" />
+        </div>
+        <ZoneDivider />
+        <div className="zone-content space-y-3">
+          <div className="skeleton h-14 rounded-full" />
+          <div className="skeleton h-28 rounded-2xl" />
+          <div className="skeleton h-20 rounded-2xl" />
+        </div>
       </div>
     )
   }
 
   if (error || !challenge) {
     return (
-      <div className="card-retro text-center py-8">
-        <p className="font-body text-retro-red text-sm">{error ?? 'Mission not found.'}</p>
+      <div className="px-4 py-10 text-center">
+        <p className="font-body text-retro-red text-base">{error ?? 'Mission not found.'}</p>
       </div>
     )
   }
 
-  const myMember = members.find(m => m.uid === currentUser?.uid)
-  const isCreator = challenge.creatorUid === currentUser?.uid
-  const durationLabel = challenge.durationType === 'ongoing' ? 'Ongoing' : `${challenge.duration} days`
-  const periodLabel = (p: string) => p.replace('per_', 'per ')
+  const myMember       = members.find(m => m.uid === currentUser?.uid)
+  const isCreator      = challenge.creatorUid === currentUser?.uid
+  const durationLabel  = challenge.durationType === 'ongoing' ? 'Ongoing' : `${challenge.duration} days`
+  const periodLabel    = (p: string) => p.replace('per_', 'per ')
   const allDossiersComplete = members.length > 0 && members.every(m => m.dossierComplete)
-  const goalsSetCount = members.filter(m => m.personalGoal && m.personalGoal.trim() !== '').length
-  const allGoalsSet = members.length > 0 && goalsSetCount === members.length
-  const myLbEntry = leaderboard.find(e => e.uid === currentUser?.uid)
+  const goalsSetCount  = members.filter(m => m.personalGoal && m.personalGoal.trim() !== '').length
+  const allGoalsSet    = members.length > 0 && goalsSetCount === members.length
+  const myLbEntry      = leaderboard.find(e => e.uid === currentUser?.uid)
   const checkedInToday = myLbEntry?.lastCheckinDate === today
+  const myRank         = leaderboard.findIndex(e => e.uid === currentUser?.uid) + 1
+
+  const mascotMood: MascotMood =
+    challenge.status === 'complete' ? 'celebrate' :
+    challenge.status === 'lobby'    ? 'idle' :
+    checkedInToday                  ? 'proud' :
+                                      'lagging'
+
+  const heroTagline =
+    challenge.status === 'complete' ? 'MISSION COMPLETE' :
+    challenge.status === 'lobby'    ? 'AWAITING DEPLOYMENT' :
+    checkedInToday                  ? `RANK #${myRank > 0 ? myRank : '?'} — CRUSHED IT` :
+                                      `RANK #${myRank > 0 ? myRank : '?'} — GET MOVING`
 
   return (
-    <section className="space-y-5">
+    <div className="flex flex-col">
 
-      {/* ── Header ── */}
-      <div className="card-retro">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Flag size={16} className="text-retro-red" strokeWidth={1.5} />
-            <span className="font-display text-[10px] text-slate/40 uppercase tracking-widest">
-              Mission Brief
-            </span>
-          </div>
-          <span className="badge-retro text-slate/60 uppercase">{challenge.status}</span>
-        </div>
-        <h2 className="font-display text-2xl text-slate leading-tight uppercase">
+      {/* ── DARK HERO ZONE ── */}
+      <div className="zone-hero pb-8 flex flex-col items-center">
+        <MascotZone mood={mascotMood} />
+
+        {/* Status pill */}
+        <span className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-cream/10 border border-cream/15 animate-slide-up-1">
+          <span className="font-display text-xs uppercase tracking-widest text-cream/70">
+            {heroTagline}
+          </span>
+        </span>
+
+        {/* Challenge name */}
+        <h2 className="mt-2 font-display text-4xl text-cream uppercase text-center leading-tight px-4 tracking-wide animate-slide-up-2">
           {challenge.name}
         </h2>
-        {challenge.description && (
-          <p className="font-body text-slate/60 mt-2 text-sm leading-relaxed">
-            {challenge.description}
-          </p>
-        )}
-        {challenge.category && (
-          <span className="inline-block mt-2 badge-retro text-slate/50">
-            {challenge.category}
+
+        {/* Meta chips */}
+        <div className="flex items-center gap-3 mt-3 animate-slide-up-3">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-cream/10 rounded-full">
+            <Users size={13} className="text-teal" strokeWidth={1.5} aria-hidden="true" />
+            <span className="font-body text-xs text-cream/70">{members.length} buddies</span>
           </span>
+          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-cream/10 rounded-full">
+            <Calendar size={13} className="text-teal" strokeWidth={1.5} aria-hidden="true" />
+            <span className="font-body text-xs text-cream/70">{durationLabel}</span>
+          </span>
+          {challenge.category && (
+            <span className="px-3 py-1.5 bg-cream/10 rounded-full font-body text-xs text-cream/70 uppercase">
+              {challenge.category}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── BLOB DIVIDER ── */}
+      <svg viewBox="0 0 375 40" className="zone-divider" fill="#B7C8E9" aria-hidden="true">
+        <path d="M0,22 Q93,2 187,22 Q281,42 375,22 L375,40 L0,40 Z" />
+      </svg>
+
+      {/* ── LIGHT CONTENT ZONE ── */}
+      <div className="zone-content space-y-4">
+
+        {/* ── Active: ONE big primary CTA ── */}
+        {challenge.status === 'active' && (
+          <button
+            className={[
+              'w-full gap-3 font-display text-xl tracking-widest min-h-[56px] animate-slide-up',
+              checkedInToday
+                ? 'inline-flex items-center justify-center px-7 py-5 bg-dark text-cream uppercase rounded-full border-2 border-dark/20 cursor-pointer transition-all duration-150 hover:bg-dark/90'
+                : 'btn-retro-xl',
+            ].join(' ')}
+            onClick={() => navigate(`/challenge/${id}/checkin`)}
+          >
+            {checkedInToday
+              ? <><CheckCircle size={20} strokeWidth={2} aria-hidden="true" /> Checked In</>
+              : <><Zap size={20} strokeWidth={2} aria-hidden="true" /> Log Check-In</>
+            }
+          </button>
         )}
-      </div>
 
-      {/* ── Meta row ── */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="card-retro flex items-center gap-3">
-          <Users size={18} className="text-olive flex-shrink-0" strokeWidth={1.5} />
-          <div>
-            <p className="label-retro">Buddies</p>
-            <p className="font-body font-bold text-slate">{members.length}</p>
-          </div>
-        </div>
-        <div className="card-retro flex items-center gap-3">
-          <Calendar size={18} className="text-olive flex-shrink-0" strokeWidth={1.5} />
-          <div>
-            <p className="label-retro">Duration</p>
-            <p className="font-body font-bold text-slate">{durationLabel}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Your mission ── */}
-      {myMember && (
-        <div className="card-retro space-y-1">
-          <p className="label-retro">Your Mission</p>
-          <p className="font-body text-slate text-sm">{myMember.personalGoal || '—'}</p>
-          {myMember.personalGoal && (
-            <p className="font-body text-slate/40 text-xs">
-              {myMember.targetFrequency}× {periodLabel(myMember.frequencyPeriod)}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ── Lobby state ── */}
-      {challenge.status === 'lobby' && (
-        <div className="card-retro space-y-4">
-          <div className="text-center py-2 space-y-1">
-            <Clock size={24} className="mx-auto text-mustard" strokeWidth={1.5} />
-            <p className="font-display text-slate uppercase tracking-wider text-sm">
-              Awaiting Deployment
-            </p>
-            <p className="font-body text-slate/50 text-xs">
-              {members.length} recruit{members.length !== 1 ? 's' : ''} enlisted
-            </p>
-          </div>
-
-          {myMember && !myMember.dossierComplete && (
-            <Link
-              to={`/challenge/${id}/dossier`}
-              className="btn-retro w-full gap-2 justify-center"
-            >
-              <FileText size={15} strokeWidth={1.8} />
-              File Your Roast Dossier
-            </Link>
-          )}
-
-          {myMember?.dossierComplete && (
-            <div className="flex items-center justify-center gap-2 py-1">
-              <CheckCircle size={15} className="text-olive" strokeWidth={2} />
-              <span className="font-display text-xs text-olive uppercase tracking-wider">
-                Dossier Filed
-              </span>
+        {/* ── Leaderboard (active / complete) ── */}
+        {(challenge.status === 'active' || challenge.status === 'complete') && (
+          <div className="card-light space-y-3 animate-slide-up-1">
+            <div className="flex items-center gap-2 border-b border-dark/10 pb-2">
+              <Trophy size={14} className="text-neon" strokeWidth={1.8} aria-hidden="true" />
+              <p className="font-display text-xs text-dark/50 uppercase tracking-wider">Leaderboard</p>
             </div>
-          )}
 
-          {inviteCode && (
-            <div className="border border-slate/20 bg-cream/60 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-display text-[10px] text-slate/40 uppercase tracking-wider">
-                  Invite Code
-                </span>
-                <span className="font-display text-mustard tracking-[0.3em] text-sm">
-                  {inviteCode}
-                </span>
-              </div>
-              <button
-                className="btn-outline w-full gap-2 py-2 text-xs"
-                onClick={() => void handleCopyInvite()}
-              >
-                {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.8} />}
-                {copied ? 'Copied!' : 'Copy Invite Link'}
-              </button>
-              <button
-                className="btn-outline w-full gap-2 py-2 text-xs"
-                onClick={async () => {
-                  try {
-                    await navigator.share({
-                      title: `Join my mission: ${challenge.name}`,
-                      text: "I'm starting a challenge on Accountabili-Buddies. Join me!",
-                      url: `${window.location.origin}/join/${inviteCode}`,
-                    })
-                  } catch { void handleCopyInvite() }
-                }}
-              >
-                <Share2 size={13} strokeWidth={1.8} />
-                Share Invite
-              </button>
-            </div>
-          )}
-
-          {isCreator && (
-            <div className="border-t border-slate/20 pt-4 space-y-2">
-              {!allGoalsSet && (
-                <p className="font-body text-slate/40 text-xs text-center">
-                  {goalsSetCount}/{members.length} goals set
-                </p>
-              )}
-              {!allDossiersComplete && (
-                <p className="font-body text-slate/40 text-xs text-center">
-                  {members.filter(m => m.dossierComplete).length}/{members.length} dossiers filed
-                </p>
-              )}
-              <button
-                className="btn-retro w-full gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                onClick={() => void handleStartMission()}
-                disabled={starting || !allGoalsSet}
-              >
-                <Rocket size={15} strokeWidth={1.8} />
-                {starting ? 'Deploying...' : 'Deploy Mission'}
-              </button>
-              {!allGoalsSet ? (
-                <p className="font-body text-slate/30 text-[10px] text-center">
-                  All members must set a goal before deploying.
-                </p>
-              ) : !allDossiersComplete && (
-                <p className="font-body text-slate/30 text-[10px] text-center">
-                  You can deploy before all dossiers are filed.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Active: check-in CTA ── */}
-      {challenge.status === 'active' && (
-        <button
-          className={[
-            'w-full gap-2',
-            checkedInToday ? 'btn-outline' : 'btn-retro',
-          ].join(' ')}
-          onClick={() => navigate(`/challenge/${id}/checkin`)}
-        >
-          {checkedInToday
-            ? <><CheckCircle size={16} strokeWidth={2} /> Checked In Today</>
-            : <><Zap size={16} strokeWidth={2} /> Log Today's Check-In</>
-          }
-        </button>
-      )}
-
-      {/* ── Leaderboard / Progress dashboard ── */}
-      {(challenge.status === 'active' || challenge.status === 'complete') && (
-        <div className="card-retro space-y-3">
-          <div className="flex items-center gap-2 border-b border-slate/20 pb-2">
-            <Trophy size={14} className="text-mustard" strokeWidth={1.8} />
-            <p className="label-retro mb-0">Leaderboard</p>
-          </div>
-
-          {leaderboard.length === 0 ? (
-            <p className="font-body text-slate/40 text-xs">
-              No check-ins yet. Be the first.
-            </p>
-          ) : (
-            <ol className="space-y-2">
-              {leaderboard.map((entry, i) => {
-                const isMe = entry.uid === currentUser?.uid
-                const checkedToday = entry.lastCheckinDate === today
-                return (
-                  <li
-                    key={entry.uid}
-                    className={[
-                      'flex items-center gap-3 py-1',
-                      isMe ? 'opacity-100' : 'opacity-80',
-                    ].join(' ')}
-                  >
-                    {/* Rank */}
-                    <span className={[
-                      'font-display text-xs w-5 text-center flex-shrink-0',
-                      i === 0 ? 'text-mustard' : 'text-slate/40',
-                    ].join(' ')}>
-                      {i + 1}
-                    </span>
-
-                    {/* Avatar */}
-                    <div className={[
-                      'w-7 h-7 rounded-full border flex items-center justify-center flex-shrink-0',
-                      isMe ? 'bg-mustard/30 border-mustard/40' : 'bg-slate/10 border-slate/20',
-                    ].join(' ')}>
-                      <span className="font-display text-[10px] text-slate">
-                        {entry.firstName[0]}
+            {leaderboard.length === 0 ? (
+              <p className="font-body text-dark/40 text-sm leading-relaxed">
+                No check-ins yet. Be the first.
+              </p>
+            ) : (
+              <ol className="space-y-2">
+                {leaderboard.map((entry, i) => {
+                  const isMe        = entry.uid === currentUser?.uid
+                  const checkedToday = entry.lastCheckinDate === today
+                  return (
+                    <li
+                      key={entry.uid}
+                      className={[
+                        'flex items-center gap-3 py-1.5',
+                        STAGGER[Math.min(i, STAGGER.length - 1)],
+                        isMe ? 'opacity-100' : 'opacity-75',
+                      ].join(' ')}
+                    >
+                      <span className={['font-display text-sm w-5 text-center flex-shrink-0', i === 0 ? 'text-neon' : 'text-dark/40'].join(' ')}>
+                        {i + 1}
                       </span>
-                    </div>
+                      <div className={['w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0', isMe ? 'bg-neon/20 border-neon/40' : 'bg-dark/10 border-dark/15'].join(' ')}>
+                        <span className="font-display text-xs text-dark">{entry.firstName[0]}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-body text-dark text-sm leading-none">
+                          {entry.firstName}
+                          {isMe && <span className="ml-1.5 text-neon text-xs">(you)</span>}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <Zap
+                          size={13}
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                          className={checkedToday ? 'text-neon' : 'text-dark/20'}
+                          fill={checkedToday ? '#E7F53C' : 'none'}
+                        />
+                        <span className="font-display text-sm text-dark/70">{entry.totalCheckins}</span>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
 
-                    {/* Name + goal */}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-body text-slate text-xs font-semibold">
-                        {entry.firstName}
-                        {isMe && <span className="ml-1 text-mustard">(you)</span>}
-                      </p>
-                    </div>
-
-                    {/* Check-in count + today status */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Zap
-                        size={13}
-                        strokeWidth={1.5}
-                        className={checkedToday ? 'text-mustard' : 'text-slate/20'}
-                        fill={checkedToday ? '#E7F53C' : 'none'}
-                      />
-                      <span className="font-display text-xs text-slate/60">
-                        {entry.totalCheckins}
-                      </span>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-          )}
-
-          {/* Members with no check-ins yet */}
-          {members
-            .filter(m => !leaderboard.find(e => e.uid === m.uid))
-            .map(m => (
-              <div key={m.uid} className="flex items-center gap-3 py-1 opacity-40">
-                <span className="font-display text-xs w-5 text-center flex-shrink-0 text-slate/30">
-                  —
-                </span>
-                <div className="w-7 h-7 rounded-full bg-slate/10 border border-slate/20 flex items-center justify-center flex-shrink-0">
-                  <span className="font-display text-[10px] text-slate">{m.firstName[0]}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-body text-slate text-xs">
-                    {m.firstName}
-                    {m.uid === currentUser?.uid && <span className="ml-1 text-mustard">(you)</span>}
-                  </p>
-                </div>
-                <span className="font-display text-xs text-slate/30">0</span>
-              </div>
-            ))
-          }
-        </div>
-      )}
-
-      {/* ── Enlisted members (lobby only) ── */}
-      {challenge.status === 'lobby' && (
-        <div className="card-retro space-y-3">
-          <p className="label-retro">Enlisted Recruits</p>
-          {members.length === 0 ? (
-            <p className="font-body text-slate/40 text-xs">No recruits yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {members.map(m => (
-                <li key={m.uid} className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-mustard/20 border border-slate/20 flex items-center justify-center flex-shrink-0">
-                    <span className="font-display text-[10px] text-slate">{m.firstName[0]}</span>
+            {/* Zero check-in members */}
+            {members
+              .filter(m => !leaderboard.find(e => e.uid === m.uid))
+              .map(m => (
+                <div key={m.uid} className="flex items-center gap-3 py-1 opacity-40">
+                  <span className="font-display text-sm w-5 text-center flex-shrink-0 text-dark/30">—</span>
+                  <div className="w-8 h-8 rounded-full bg-dark/10 border border-dark/15 flex items-center justify-center flex-shrink-0">
+                    <span className="font-display text-xs text-dark">{m.firstName[0]}</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-body text-slate text-xs font-semibold">
+                    <p className="font-body text-dark text-sm">
                       {m.firstName}
-                      {m.uid === currentUser?.uid && (
-                        <span className="ml-1 text-mustard">(you)</span>
-                      )}
+                      {m.uid === currentUser?.uid && <span className="ml-1.5 text-neon text-xs">(you)</span>}
                     </p>
-                    {m.personalGoal && (
-                      <p className="font-body text-slate/40 text-[10px] truncate">{m.personalGoal}</p>
-                    )}
                   </div>
-                  {m.dossierComplete && (
-                    <FileText size={13} className="flex-shrink-0 text-olive" strokeWidth={1.8} />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+                  <span className="font-display text-sm text-dark/30">0</span>
+                </div>
+              ))
+            }
+          </div>
+        )}
 
-    </section>
+        {/* ── Your mission + brief (flat, no card wrapper) ── */}
+        {(myMember || challenge.description) && (
+          <div className="space-y-3 animate-slide-up-2 px-1">
+            {myMember && (
+              <div>
+                <p className="label-light">Your Mission</p>
+                <p className="font-body text-dark text-base leading-relaxed">
+                  {myMember.personalGoal || '—'}
+                </p>
+                {myMember.personalGoal && (
+                  <p className="font-body text-dark/40 text-sm mt-0.5">
+                    {myMember.targetFrequency}× {periodLabel(myMember.frequencyPeriod)}
+                  </p>
+                )}
+              </div>
+            )}
+            {challenge.description && (
+              <div className={myMember ? 'border-t border-dark/10 pt-3' : ''}>
+                <p className="label-light">Mission Brief</p>
+                <p className="font-body text-dark/70 text-sm leading-relaxed">
+                  {challenge.description}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Lobby controls ── */}
+        {challenge.status === 'lobby' && (
+          <div className="space-y-3 animate-slide-up-1">
+
+            {/* Dossier CTA */}
+            {myMember && !myMember.dossierComplete && (
+              <button
+                className="btn-retro-xl w-full gap-2"
+                onClick={() => navigate(`/challenge/${id}/dossier`)}
+              >
+                <FileText size={18} strokeWidth={1.8} aria-hidden="true" />
+                File Your Roast Dossier
+              </button>
+            )}
+            {myMember?.dossierComplete && (
+              <div className="flex items-center justify-center gap-2 py-2">
+                <CheckCircle size={15} className="text-teal" strokeWidth={2} aria-hidden="true" />
+                <span className="font-display text-sm text-teal uppercase tracking-wider">Dossier Filed</span>
+              </div>
+            )}
+
+            {/* Invite code */}
+            {inviteCode && (
+              <div className="card-light space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="label-light">Invite Code</p>
+                  <span className="font-display text-dark tracking-[0.3em] text-lg">{inviteCode}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="inline-flex items-center justify-center gap-2 flex-1 px-4 py-3
+                               bg-dark text-cream font-body text-sm uppercase tracking-wider
+                               rounded-full min-h-[44px] cursor-pointer
+                               border-2 border-dark/20 transition-all duration-150 hover:bg-dark/80"
+                    onClick={() => void handleCopyInvite()}
+                  >
+                    {copied ? <Check size={14} strokeWidth={2} aria-hidden="true" /> : <Copy size={14} strokeWidth={1.8} aria-hidden="true" />}
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center gap-2 flex-1 px-4 py-3
+                               bg-dark text-cream font-body text-sm uppercase tracking-wider
+                               rounded-full min-h-[44px] cursor-pointer
+                               border-2 border-dark/20 transition-all duration-150 hover:bg-dark/80"
+                    onClick={async () => {
+                      try {
+                        await navigator.share({
+                          title: `Join my mission: ${challenge.name}`,
+                          text: "I'm starting a challenge on Accountabili-Buddies. Join me!",
+                          url: `${window.location.origin}/join/${inviteCode}`,
+                        })
+                      } catch { void handleCopyInvite() }
+                    }}
+                  >
+                    <Share2 size={14} strokeWidth={1.8} aria-hidden="true" />
+                    Share
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Enlisted recruits — flat list */}
+            <div className="px-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Users size={14} className="text-teal" strokeWidth={1.5} aria-hidden="true" />
+                <p className="label-light mb-0">
+                  Enlisted Recruits — {members.length}
+                </p>
+              </div>
+              {members.length === 0 ? (
+                <p className="font-body text-dark/40 text-sm">No recruits yet.</p>
+              ) : (
+                <ul className="divide-y divide-dark/8">
+                  {members.map(m => (
+                    <li key={m.uid} className="flex items-center gap-3 py-2.5">
+                      <div className="w-8 h-8 rounded-full bg-dark/10 border border-dark/15 flex items-center justify-center flex-shrink-0">
+                        <span className="font-display text-xs text-dark">{m.firstName[0]}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-body text-dark text-sm">
+                          {m.firstName}
+                          {m.uid === currentUser?.uid && <span className="ml-1.5 text-neon text-xs">(you)</span>}
+                        </p>
+                        {m.personalGoal && (
+                          <p className="font-body text-dark/40 text-xs truncate leading-relaxed">{m.personalGoal}</p>
+                        )}
+                      </div>
+                      {m.dossierComplete && (
+                        <Link2 size={13} className="flex-shrink-0 text-teal" strokeWidth={1.8} aria-hidden="true" />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Deploy — creator only */}
+            {isCreator && (
+              <div className="space-y-2">
+                {!allGoalsSet && (
+                  <p className="font-body text-dark/50 text-sm text-center leading-relaxed">
+                    {goalsSetCount}/{members.length} goals set before deploying
+                  </p>
+                )}
+                {!allDossiersComplete && allGoalsSet && (
+                  <p className="font-body text-dark/40 text-xs text-center">
+                    You can deploy before all dossiers are filed.
+                  </p>
+                )}
+                <button
+                  className="btn-retro-xl w-full gap-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => void handleStartMission()}
+                  disabled={starting || !allGoalsSet}
+                >
+                  <Rocket size={18} strokeWidth={1.8} aria-hidden="true" />
+                  {starting ? 'Deploying…' : 'Deploy Mission'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
   )
 }

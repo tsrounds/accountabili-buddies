@@ -1,8 +1,7 @@
-import { UserCircle, LogOut, Settings } from 'lucide-react'
+import { LogOut, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-
-// TODO Phase 4: stats (Missions, Completed, Best Streak) from ab_users document
+import ZoneDivider from '@/components/ZoneDivider'
 
 export default function Profile() {
   const { currentUser, signOut } = useAuth()
@@ -13,58 +12,80 @@ export default function Profile() {
     navigate('/login', { replace: true })
   }
 
+  const initials = (currentUser?.firstName ?? 'R')[0].toUpperCase()
+
   return (
-    <section className="space-y-5">
-      <div className="flex items-center gap-2">
-        <UserCircle size={22} className="text-mustard" strokeWidth={1.5} />
-        <h2 className="font-display text-2xl text-slate uppercase tracking-wide">
-          Profile
-        </h2>
-      </div>
+    <div className="flex flex-col">
 
-      {/* Avatar + name */}
-      <div className="card-retro flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full border-2 border-slate bg-mustard/20 flex items-center justify-center flex-shrink-0">
-          <UserCircle size={40} className="text-slate" strokeWidth={1} />
+      {/* ── DARK HERO ZONE ── */}
+      <div className="zone-hero pb-10 flex flex-col items-center gap-3">
+        {/* Large avatar ring — character badge */}
+        <div className="w-28 h-28 rounded-full bg-dark-teal border-4 border-neon flex items-center justify-center animate-fade-in shadow-glow">
+          <span className="font-display text-5xl text-cream leading-none">{initials}</span>
         </div>
-        <div className="min-w-0">
-          <p className="font-display text-slate text-lg truncate">
+
+        <div className="text-center animate-slide-up">
+          <p className="font-body text-cream/40 text-xs uppercase tracking-[0.25em]">Agent</p>
+          <h2 className="font-display text-4xl text-cream uppercase tracking-wide leading-tight">
             {currentUser?.firstName ?? 'Recruit'}
-          </p>
-          <p className="font-body text-slate/40 text-xs truncate">
-            {currentUser?.phone ?? ''}
-          </p>
+          </h2>
+          {currentUser?.phone && (
+            <p className="font-body text-cream/40 text-sm mt-1">{currentUser.phone}</p>
+          )}
         </div>
       </div>
 
-      {/* Stats — Phase 4 */}
-      <div className="grid grid-cols-3 gap-3 text-center">
-        {[
-          { label: 'Missions', value: '—' },
-          { label: 'Completed', value: '—' },
-          { label: 'Best Streak', value: '—' },
-        ].map(({ label, value }) => (
-          <div key={label} className="card-retro py-3">
-            <p className="font-display text-xl text-mustard">{value}</p>
-            <p className="font-body text-slate/50 text-[10px] uppercase tracking-wide mt-1">{label}</p>
-          </div>
-        ))}
-      </div>
+      {/* ── BLOB DIVIDER ── */}
+      <ZoneDivider />
 
-      {/* Actions */}
-      <div className="space-y-3">
-        <button className="btn-outline w-full gap-2">
-          <Settings size={16} strokeWidth={1.8} />
-          Settings
-        </button>
-        <button
-          className="btn-danger w-full gap-2"
-          onClick={() => void handleSignOut()}
-        >
-          <LogOut size={16} strokeWidth={1.8} />
-          Sign Out
-        </button>
+      {/* ── LIGHT CONTENT ZONE ── */}
+      <div className="zone-content space-y-4">
+
+        {/* Stats grid — placeholder until Phase 7 real data */}
+        <div className="grid grid-cols-3 gap-3 animate-slide-up">
+          {[
+            { label: 'Missions',    value: '—' },
+            { label: 'Completed',   value: '—' },
+            { label: 'Best Streak', value: '—' },
+          ].map(({ label, value }, i) => (
+            <div
+              key={label}
+              className="card-light text-center py-4"
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <p className="font-display text-2xl text-neon">{value}</p>
+              <p className="font-body text-dark/50 text-xs uppercase tracking-wide mt-1 leading-relaxed">
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="space-y-3 animate-slide-up-2">
+          <button
+            className="inline-flex items-center justify-center gap-2 w-full px-7 py-4
+                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
+                       transition-all duration-150 hover:bg-dark/90"
+          >
+            <Settings size={16} strokeWidth={1.8} aria-hidden="true" />
+            Settings
+          </button>
+          <button
+            className="inline-flex items-center justify-center gap-2 w-full px-7 py-4
+                       bg-retro-red text-cream font-body text-base uppercase tracking-wider
+                       rounded-full min-h-[44px] cursor-pointer
+                       transition-all duration-150 hover:brightness-110 active:scale-[0.97]"
+            style={{ boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.22)' }}
+            onClick={() => void handleSignOut()}
+          >
+            <LogOut size={16} strokeWidth={1.8} aria-hidden="true" />
+            Sign Out
+          </button>
+        </div>
+
       </div>
-    </section>
+    </div>
   )
 }

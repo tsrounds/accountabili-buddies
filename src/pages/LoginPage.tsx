@@ -15,20 +15,14 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
-import { ArrowRight, Lock, User, Phone } from 'lucide-react'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
+import { ArrowRight, Lock } from 'lucide-react'
+import MascotZone from '@/components/MascotZone'
+import ZoneDivider from '@/components/ZoneDivider'
 
 type Step =
   | { name: 'phone' }
   | { name: 'otp'; confirmationResult: ConfirmationResult; phone: string }
   | { name: 'name'; uid: string; phone: string }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Firebase error → readable message
-// ─────────────────────────────────────────────────────────────────────────────
 
 const ERROR_MAP: Record<string, string> = {
   'auth/invalid-phone-number': 'Invalid phone number. Include your country code (e.g. +1).',
@@ -46,17 +40,12 @@ function formatError(err: unknown): string {
   return 'Something went wrong. Try again.'
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LoginPage
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function LoginPage() {
   const { currentUser, refreshUser } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/'
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (currentUser) navigate(from, { replace: true })
   }, [currentUser, from, navigate])
@@ -71,24 +60,19 @@ export default function LoginPage() {
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const digitRefs = useRef<Array<HTMLInputElement | null>>(Array(6).fill(null))
 
-  // ── reCAPTCHA lifecycle (phone step only) ────────────────────────────────
   useEffect(() => {
     if (step.name !== 'phone') return
-    // Guard against StrictMode double-invoke
     if (recaptchaVerifierRef.current) return
-
     recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
       size: 'invisible',
       callback: () => {},
     })
-
     return () => {
       recaptchaVerifierRef.current?.clear()
       recaptchaVerifierRef.current = null
     }
   }, [step.name])
 
-  // ── Phone submission ─────────────────────────────────────────────────────
   async function handlePhoneSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -98,20 +82,23 @@ export default function LoginPage() {
       const cr = await signInWithPhoneNumber(auth, phoneInput, recaptchaVerifierRef.current)
       setStep({ name: 'otp', confirmationResult: cr, phone: phoneInput })
     } catch (err) {
+      console.error('[LoginPage] signInWithPhoneNumber error:', err)
       setError(formatError(err))
-      // Verifier is invalidated after an error — recreate it for next attempt
-      recaptchaVerifierRef.current?.clear()
-      recaptchaVerifierRef.current = null
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {},
-      })
+      try {
+        recaptchaVerifierRef.current?.clear()
+        recaptchaVerifierRef.current = null
+        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {},
+        })
+      } catch (rcErr) {
+        console.error('[LoginPage] reCAPTCHA recreate error:', rcErr)
+      }
     } finally {
       setSubmitting(false)
     }
   }
 
-  // ── OTP submission ───────────────────────────────────────────────────────
   async function handleOtpSubmit(e: FormEvent) {
     e.preventDefault()
     if (step.name !== 'otp') return
@@ -124,11 +111,9 @@ export default function LoginPage() {
       const uid = credential.user.uid
       const userSnap = await getDoc(doc(db, 'ab_users', uid))
       if (userSnap.exists()) {
-        // Returning user — load their profile into context then navigate
         await refreshUser()
         navigate(from, { replace: true })
       } else {
-        // New user — advance to name step
         setStep({ name: 'name', uid, phone: step.phone })
       }
     } catch (err) {
@@ -138,7 +123,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Name submission ──────────────────────────────────────────────────────
   async function handleNameSubmit(e: FormEvent) {
     e.preventDefault()
     if (step.name !== 'name') return
@@ -163,7 +147,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── OTP digit handlers ───────────────────────────────────────────────────
   function handleDigitChange(index: number, value: string) {
     const digit = value.replace(/\D/g, '').slice(-1)
     const next = [...otpDigits]
@@ -188,56 +171,47 @@ export default function LoginPage() {
     digitRefs.current[focusIndex]?.focus()
   }
 
-  // ── Step title/icon metadata ─────────────────────────────────────────────
-  const stepMeta = {
-    phone: { title: 'Enlistment Form',    Icon: Phone },
-    otp:   { title: 'Enter Clearance Code', Icon: Lock  },
-    name:  { title: 'Identification',     Icon: User  },
-  }
-  const { title, Icon } = stepMeta[step.name]
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
+  const stepLabel = {
+    phone: 'ENLISTMENT',
+    otp:   'VERIFICATION',
+    name:  'IDENTIFICATION',
+  }[step.name]
 
   return (
-    <div className="paper-bg min-h-screen flex flex-col items-center justify-center px-4 py-10 font-body">
-      <div className="w-full max-w-sm">
+    <div className="bg-dark min-h-screen flex flex-col font-body">
 
-        {/* App header */}
-        <div className="text-center mb-6">
-          <h1 className="font-display text-slate text-2xl uppercase tracking-widest leading-tight">
-            Accountabili-Buddies
-          </h1>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex-1 border-t-2 border-slate/30" />
-            <span className="badge-retro text-slate/60">CLASSIFIED</span>
-            <div className="flex-1 border-t-2 border-slate/30" />
-          </div>
-        </div>
+      {/* ── DARK HERO ZONE ── */}
+      <div className="flex-1 flex flex-col items-center justify-end px-5 pb-8 pt-12">
+        <MascotZone mood="idle" />
+        <p className="mt-4 font-display text-cream/40 text-xs uppercase tracking-[0.25em] animate-slide-up-1">
+          {stepLabel}
+        </p>
+        <h1 className="font-display text-cream text-5xl uppercase tracking-wide text-center leading-none mt-1 animate-slide-up-2">
+          Accountabili-<br />Buddies
+        </h1>
+      </div>
 
-        {/* Step card */}
-        <div className="card-retro space-y-4">
-          {/* Step header */}
-          <div className="flex items-center gap-2 border-b border-slate/20 pb-3">
-            <Icon size={16} className="text-mustard" strokeWidth={1.8} />
-            <h2 className="font-display text-sm text-slate uppercase tracking-wider">
-              {title}
-            </h2>
-          </div>
+      {/* ── BLOB DIVIDER ── */}
+      <ZoneDivider />
 
-          {/* Error message */}
+      {/* ── LIGHT CONTENT ZONE ── */}
+      <div className="zone-content pb-10">
+        <div className="w-full max-w-sm mx-auto space-y-4">
+
+          {/* Error */}
           {error && (
-            <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2">
-              {error}
-            </p>
+            <div className="flex items-start gap-2 bg-retro-red/15 border border-retro-red/30 rounded-2xl px-4 py-3 animate-fade-in">
+              <p className="font-body text-dark text-sm leading-relaxed">{error}</p>
+            </div>
           )}
 
           {/* ── PHONE STEP ── */}
           {step.name === 'phone' && (
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <form onSubmit={handlePhoneSubmit} className="space-y-4 animate-slide-up">
               <div>
-                <label htmlFor="phone" className="label-retro">Mobile Number</label>
+                <label htmlFor="phone" className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-1.5">
+                  Mobile Number
+                </label>
                 <input
                   id="phone"
                   type="tel"
@@ -245,23 +219,25 @@ export default function LoginPage() {
                   onChange={e => setPhoneInput(e.target.value)}
                   placeholder="+1 555 000 0000"
                   required
-                  className="input-retro tracking-wider"
+                  className="w-full border border-dark/15 bg-white/60 px-4 py-3
+                             font-body text-dark placeholder-dark/30 rounded-2xl
+                             focus:outline-none focus:border-dark/40 transition-colors duration-150
+                             min-h-[44px] tracking-wider"
                   autoComplete="tel"
                   inputMode="tel"
                 />
-                <p className="font-body text-slate/40 text-xs mt-1">
+                <p className="font-body text-dark/50 text-xs mt-1.5 leading-relaxed">
                   Include your country code (e.g. +1 for US/Canada)
                 </p>
               </div>
-              {/* Invisible reCAPTCHA target */}
               <div id="recaptcha-container" />
               <button
                 type="submit"
                 disabled={submitting}
-                className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-retro-xl w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Sending Code...' : (
-                  <>Send Code <ArrowRight size={14} /></>
+                {submitting ? 'Sending Code…' : (
+                  <>Send Code <ArrowRight size={16} aria-hidden="true" /></>
                 )}
               </button>
             </form>
@@ -269,16 +245,16 @@ export default function LoginPage() {
 
           {/* ── OTP STEP ── */}
           {step.name === 'otp' && (
-            <form onSubmit={handleOtpSubmit} className="space-y-4">
-              <p className="font-body text-slate/60 text-sm text-center">
-                Code dispatched to <span className="text-slate font-semibold">{step.phone}</span>
+            <form onSubmit={handleOtpSubmit} className="space-y-4 animate-slide-up">
+              <p className="font-body text-dark/60 text-sm text-center leading-relaxed">
+                Code dispatched to{' '}
+                <span className="text-dark font-semibold">{step.phone}</span>
               </p>
               <div>
-                <label className="label-retro text-center block">Clearance Code</label>
-                <div
-                  className="flex gap-2 justify-center mt-1"
-                  onPaste={handleOtpPaste}
-                >
+                <label className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-2 text-center">
+                  Clearance Code
+                </label>
+                <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, i) => (
                     <input
                       key={i}
@@ -289,7 +265,9 @@ export default function LoginPage() {
                       value={digit}
                       onChange={e => handleDigitChange(i, e.target.value)}
                       onKeyDown={e => handleDigitKeyDown(i, e)}
-                      className="w-10 h-12 text-center input-retro text-lg font-display p-0"
+                      className="w-12 h-14 text-center border border-dark/15 bg-white/60
+                                 text-dark text-xl font-display rounded-2xl
+                                 focus:outline-none focus:border-dark/40 transition-colors duration-150"
                       autoComplete="one-time-code"
                       autoFocus={i === 0}
                     />
@@ -299,15 +277,15 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={submitting || otpDigits.join('').length !== 6}
-                className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-retro-xl w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Verifying...' : (
-                  <>Confirm Code <Lock size={14} /></>
+                {submitting ? 'Verifying…' : (
+                  <>Confirm Code <Lock size={16} aria-hidden="true" /></>
                 )}
               </button>
               <button
                 type="button"
-                className="w-full text-center font-body text-slate/40 text-xs underline underline-offset-2"
+                className="w-full text-center font-body text-dark/40 text-sm underline underline-offset-2 cursor-pointer min-h-[44px]"
                 onClick={() => { setStep({ name: 'phone' }); setOtpDigits(Array(6).fill('')); setError(null) }}
               >
                 Wrong number? Start over
@@ -317,12 +295,14 @@ export default function LoginPage() {
 
           {/* ── NAME STEP ── */}
           {step.name === 'name' && (
-            <form onSubmit={handleNameSubmit} className="space-y-4">
-              <p className="font-body text-slate/70 text-sm leading-relaxed">
+            <form onSubmit={handleNameSubmit} className="space-y-4 animate-slide-up">
+              <p className="font-body text-dark/60 text-sm leading-relaxed text-center">
                 What should we call you, recruit?
               </p>
               <div>
-                <label htmlFor="firstName" className="label-retro">First Name</label>
+                <label htmlFor="firstName" className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-1.5">
+                  First Name
+                </label>
                 <input
                   id="firstName"
                   type="text"
@@ -331,28 +311,31 @@ export default function LoginPage() {
                   placeholder="e.g. Theodore"
                   required
                   autoFocus
-                  className="input-retro"
+                  className="w-full border border-dark/15 bg-white/60 px-4 py-3
+                             font-body text-dark placeholder-dark/30 rounded-2xl
+                             focus:outline-none focus:border-dark/40 transition-colors duration-150
+                             min-h-[44px]"
                   autoComplete="given-name"
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting || !nameInput.trim()}
-                className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-retro-xl w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Reporting for duty...' : (
-                  <>Report for Duty <ArrowRight size={14} /></>
+                {submitting ? 'Reporting for duty…' : (
+                  <>Report for Duty <ArrowRight size={16} aria-hidden="true" /></>
                 )}
               </button>
             </form>
           )}
-        </div>
 
-        {/* Footer */}
-        <p className="text-center font-body text-slate/30 text-xs mt-6">
-          Your data is used only for this app. No spam. Ever.
-        </p>
+          <p className="text-center font-body text-dark/30 text-xs pt-2 leading-relaxed">
+            Your data is used only for this app. No spam. Ever.
+          </p>
+        </div>
       </div>
+
     </div>
   )
 }

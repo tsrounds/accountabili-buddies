@@ -87,7 +87,7 @@ export default function NotificationBell() {
       {/* Bell button */}
       <button
         onClick={() => setOpen(prev => !prev)}
-        className="relative p-1 text-slate hover:text-mustard transition-colors"
+        className="relative p-1 text-cream hover:text-neon transition-colors"
         aria-label="Notifications"
       >
         <Bell size={20} strokeWidth={1.8} />
@@ -102,19 +102,19 @@ export default function NotificationBell() {
 
       {/* Drop-down panel */}
       {open && (
-        <div className="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-cream border-2 border-slate shadow-retro z-50">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-slate/20 sticky top-0 bg-cream">
-            <span className="font-display text-xs text-slate uppercase tracking-wider">
+        <div className="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-dark-teal border border-cream/15 rounded-2xl shadow-float z-50">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-cream/10 sticky top-0 bg-dark-teal rounded-t-2xl">
+            <span className="font-display text-xs text-cream/60 uppercase tracking-wider">
               Dispatches
             </span>
-            <button onClick={() => setOpen(false)} className="text-slate/40 hover:text-slate">
+            <button onClick={() => setOpen(false)} className="text-cream/40 hover:text-cream">
               <X size={14} strokeWidth={2} />
             </button>
           </div>
 
           {notifs.length === 0 ? (
             <div className="px-3 py-6 text-center">
-              <p className="font-body text-slate/40 text-xs">
+              <p className="font-body text-cream/40 text-xs">
                 No dispatches yet. Stay active.
               </p>
             </div>
@@ -124,8 +124,8 @@ export default function NotificationBell() {
                 <li
                   key={n.id}
                   className={[
-                    'px-3 py-3 border-b border-slate/10 last:border-0',
-                    !n.read ? 'bg-mustard/5' : '',
+                    'px-3 py-3 border-b border-cream/10 last:border-0',
+                    !n.read ? 'bg-neon/10' : '',
                   ].join(' ')}
                 >
                   <Link
@@ -133,24 +133,24 @@ export default function NotificationBell() {
                     onClick={() => setOpen(false)}
                     className="block"
                   >
-                    <p className="font-display text-[10px] text-slate/40 uppercase tracking-wider mb-1">
+                    <p className="font-display text-[10px] text-cream/40 uppercase tracking-wider mb-1">
                       {n.challengeName} · {formatTime(n.createdAt)}
                       {!n.read && (
                         <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-retro-red align-middle" />
                       )}
                     </p>
-                    <p className="font-body text-slate text-xs leading-relaxed">{n.message}</p>
+                    <p className="font-body text-cream text-xs leading-relaxed">{n.message}</p>
                   </Link>
                 </li>
               ))}
             </ul>
           )}
 
-          <div className="px-3 py-2 border-t border-slate/20 sticky bottom-0 bg-cream">
+          <div className="px-3 py-2 border-t border-cream/10 sticky bottom-0 bg-dark-teal rounded-b-2xl">
             <Link
               to="/notifications"
               onClick={() => setOpen(false)}
-              className="font-display text-[10px] uppercase tracking-wider text-slate/50 hover:text-slate"
+              className="font-display text-[10px] uppercase tracking-wider text-cream/50 hover:text-cream"
             >
               View all →
             </Link>

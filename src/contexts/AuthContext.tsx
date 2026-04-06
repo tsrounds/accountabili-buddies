@@ -67,14 +67,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       // Firebase user exists — fetch the Firestore profile doc
-      const snap = await getDoc(doc(db, 'ab_users', firebaseUser.uid))
-      if (snap.exists()) {
-        setCurrentUser(snap.data() as AbUser)
-      } else {
-        // New user — profile not yet created (LoginPage will handle name entry)
+      try {
+        const snap = await getDoc(doc(db, 'ab_users', firebaseUser.uid))
+        if (snap.exists()) {
+          setCurrentUser(snap.data() as AbUser)
+        } else {
+          // New user — profile not yet created (LoginPage will handle name entry)
+          setCurrentUser(null)
+        }
+      } catch (err) {
+        console.error('[AuthContext] Firestore fetch error:', err)
         setCurrentUser(null)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return unsubscribe

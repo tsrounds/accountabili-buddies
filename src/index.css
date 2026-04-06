@@ -3,13 +3,12 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────
-   Custom font: Tholoes (display/headers)
-   Drop Tholoes.woff2 into public/fonts/
+   Custom fonts
    ───────────────────────────────────────────── */
 
 @font-face {
   font-family: 'Tholoes';
-  src: url('/fonts/Tholoes Font/tholoesdemo-jexel.ttf') format('truetype');
+  src: url('/fonts/Tholoes/tholoesdemo-jexel.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -17,7 +16,7 @@
 
 @font-face {
   font-family: 'Bebas Neue';
-  src: url('/fonts/Bebas_Neue,DM_Sans/Bebas_Neue/BebasNeue-Regular.ttf') format('truetype');
+  src: url('/fonts/Bebas_Neue/BebasNeue-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -53,12 +52,28 @@
    ───────────────────────────────────────────── */
 
 @layer components {
+
+  /* ── Buttons ── */
+
   .btn-retro {
-    @apply inline-flex items-center justify-center px-6 py-3
+    @apply inline-flex items-center justify-center px-7 py-3.5
            bg-neon text-dark font-body text-base font-bold
-           uppercase tracking-wider rounded-xl
-           hover:brightness-110 active:scale-[0.97]
-           transition-all duration-75 cursor-pointer select-none;
+           uppercase tracking-wider rounded-full
+           min-h-[44px] cursor-pointer select-none;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.22), 0 2px 12px rgba(0,0,0,0.25);
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
+  }
+  .btn-retro:hover {
+    filter: brightness(1.08);
+  }
+  .btn-retro:active {
+    transform: scale(0.95) translateY(1px);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  /* XL pill button — used as the one primary CTA per screen */
+  .btn-retro-xl {
+    @apply btn-retro py-5 text-xl tracking-widest;
   }
 
   .btn-danger {
@@ -66,26 +81,134 @@
   }
 
   .btn-outline {
-    @apply btn-retro bg-transparent text-cream border-2 border-cream/20
-           hover:border-cream/40 hover:brightness-100 hover:bg-cream/5;
+    @apply btn-retro bg-transparent text-cream border-2 border-cream/25;
+    box-shadow: none;
   }
+  .btn-outline:hover {
+    @apply border-cream/50 bg-cream/5;
+    filter: none;
+  }
+  .btn-outline:active {
+    transform: scale(0.95);
+    box-shadow: none;
+  }
+
+  /* ── Cards ── */
 
   .card-retro {
     @apply bg-dark-teal rounded-2xl p-4;
   }
 
+  /* Card with a subtle hand-placed tilt — interactive variants reset on hover */
+  .card-wobbly {
+    @apply card-retro;
+    transform: rotate(-1deg);
+    transition: transform 0.15s ease-out;
+  }
+  .card-wobbly:hover,
+  .card-wobbly:focus-within {
+    transform: rotate(0deg);
+  }
+
+  /* ── Layout zones ── */
+
+  /* Dark hero zone — full-bleed, owns its own horizontal padding */
+  .zone-hero {
+    @apply bg-dark w-full px-5 pt-6 pb-0;
+  }
+
+  /* Light content zone — floats above the dark zone */
+  .zone-content {
+    @apply bg-light-purple w-full px-4 pt-6 pb-32;
+    border-radius: 2rem 2rem 0 0;
+  }
+
+  /* Blob SVG divider lives between zone-hero and zone-content */
+  .zone-divider {
+    @apply block w-full;
+    /* fill is set inline in the SVG element */
+    margin-top: -1px;
+  }
+
+  /* ── Forms ── */
+
   .input-retro {
-    @apply w-full border border-cream/20 bg-dark-teal/80 px-3 py-2
-           font-body text-cream placeholder-cream/30 rounded-xl
-           focus:outline-none focus:border-teal transition-colors duration-150;
+    @apply w-full border border-cream/20 bg-dark-teal/80 px-4 py-3
+           font-body text-cream placeholder-cream/30 rounded-2xl
+           focus:outline-none focus:border-teal transition-colors duration-150
+           min-h-[44px];
   }
 
   .label-retro {
-    @apply block font-body text-xs text-cream/50 uppercase tracking-wider mb-1;
+    @apply block font-body text-xs text-cream/60 uppercase tracking-wider mb-1.5;
   }
 
   .badge-retro {
-    @apply inline-block px-2 py-0.5 rounded-full bg-cream/10
-           font-body text-[10px] uppercase tracking-widest text-cream/60;
+    @apply inline-block px-3 py-1 rounded-full bg-dark/20
+           font-body text-xs uppercase tracking-widest text-dark/70;
+  }
+
+  /* Badge on dark backgrounds */
+  .badge-retro-dark {
+    @apply inline-block px-3 py-1 rounded-full bg-cream/10
+           font-body text-xs uppercase tracking-widest text-cream/60;
+  }
+
+  /* ── Light-zone variants (for content on light-purple background) ── */
+
+  .zone-hero-compact {
+    @apply bg-dark w-full px-5 pt-4 pb-0;
+  }
+
+  .card-light {
+    @apply bg-white/40 backdrop-blur-sm rounded-2xl p-4;
+    border: 1px solid rgba(31, 33, 31, 0.08);
+  }
+
+  .input-light {
+    @apply w-full bg-white/60 px-4 py-3
+           font-body text-dark placeholder-dark/30 rounded-2xl
+           focus:outline-none transition-colors duration-150
+           min-h-[44px];
+    border: 1px solid rgba(31, 33, 31, 0.12);
+  }
+  .input-light:focus {
+    border-color: rgba(31, 33, 31, 0.30);
+  }
+
+  .label-light {
+    @apply block font-body text-xs text-dark/50 uppercase tracking-wider mb-1.5;
+  }
+
+  /* ── Skeletons ── */
+
+  .skeleton {
+    @apply bg-cream/10 rounded-xl animate-pulse;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Reduced motion — disable all custom animations
+   ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-slide-up-1,
+  .animate-slide-up-2,
+  .animate-slide-up-3,
+  .animate-slide-up-4,
+  .animate-spring-pop,
+  .animate-check-pop,
+  .animate-wiggle,
+  .animate-fade-in,
+  .card-wobbly {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .btn-retro:active,
+  .btn-outline:active {
+    transform: none !important;
   }
 }
