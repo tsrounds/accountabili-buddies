@@ -239,7 +239,7 @@ export default function Home() {
                                 ? 'text-dark/30'
                                 : 'text-dark/15'
                           }
-                          fill={c.status === 'active' && c.checkedInToday ? '#E7F53C' : 'none'}
+                          fill={c.status === 'active' && c.checkedInToday ? '#146445' : 'none'}
                         />
                         <span className="font-display text-[10px] uppercase tracking-wide text-dark/40">
                           {c.status === 'active'
@@ -261,9 +261,9 @@ export default function Home() {
               <Link
                 to="/join"
                 className="inline-flex items-center justify-center gap-2 flex-1 px-5 py-3
-                           bg-dark text-cream font-body text-base uppercase tracking-wider
+                           bg-emerald text-ivory font-body text-base uppercase tracking-wider
                            rounded-full min-h-[44px] cursor-pointer
-                           border-2 border-dark/20 transition-all duration-150 hover:bg-dark/80"
+                           border-2 border-dark/20 transition-all duration-150 hover:brightness-110"
               >
                 <Users size={15} strokeWidth={1.8} aria-hidden="true" />
                 Join One
@@ -286,9 +286,9 @@ export default function Home() {
               <Link
                 to="/join"
                 className="inline-flex items-center gap-2 px-6 py-3
-                           bg-dark text-cream font-body text-base uppercase tracking-wider
+                           bg-emerald text-ivory font-body text-base uppercase tracking-wider
                            rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                           transition-all duration-150 hover:bg-dark/80"
+                           transition-all duration-150 hover:brightness-110"
               >
                 <Users size={15} strokeWidth={1.8} aria-hidden="true" />
                 Join One

@@ -119,6 +119,7 @@ export default function JoinChallenge() {
           personalGoal: personalGoal.trim(),
           targetFrequency: parseInt(targetFrequency, 10),
           frequencyPeriod,
+          isReady: false,
           joinedAt: serverTimestamp(),
           dossierComplete: false,
           friendIntelComplete: false,

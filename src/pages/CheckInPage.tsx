@@ -1,20 +1,16 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react'
+import { CheckCircle, XCircle, AlertCircle, ArrowLeft, Hash } from 'lucide-react'
 import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
-  updateDoc,
-  increment,
-  serverTimestamp,
   collection,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
-import { sendCheckinBlast } from '@/lib/notifications'
+import { submitCheckin } from '@/lib/checkin'
 import MascotZone from '@/components/MascotZone'
 import ZoneDivider from '@/components/ZoneDivider'
 
@@ -42,6 +38,7 @@ export default function CheckInPage() {
   const [personalGoal, setPersonalGoal] = useState('')
   const [otherMembers, setOtherMembers] = useState<OtherMember[]>([])
   const [note, setNote] = useState('')
+  const [value, setValue] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,50 +93,24 @@ export default function CheckInPage() {
     void load()
   }, [id, currentUser, today])
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent, completed: boolean) {
     e.preventDefault()
     if (!id || !currentUser) return
     setError(null)
     setSubmitting(true)
     try {
-      const checkinRef = doc(db, 'ab_challenges', id, 'checkins', `${currentUser.uid}_${today}`)
-      const leaderboardRef = doc(db, 'ab_challenges', id, 'leaderboard', currentUser.uid)
-
-      await setDoc(checkinRef, {
+      await submitCheckin({
+        challengeId: id,
         uid: currentUser.uid,
         firstName: currentUser.firstName,
-        date: today,
-        note: note.trim(),
-        createdAt: serverTimestamp(),
+        today,
+        completed,
+        value: value.trim() ? Number(value) : null,
+        note,
+        personalGoal,
+        challengeName,
+        otherMembers,
       })
-
-      const lbSnap = await getDoc(leaderboardRef)
-      if (lbSnap.exists()) {
-        await updateDoc(leaderboardRef, {
-          totalCheckins: increment(1),
-          lastCheckinDate: today,
-        })
-      } else {
-        await setDoc(leaderboardRef, {
-          uid: currentUser.uid,
-          firstName: currentUser.firstName,
-          totalCheckins: 1,
-          lastCheckinDate: today,
-        })
-      }
-
-      // Fire check-in blast notifications to other members (non-blocking)
-      if (otherMembers.length > 0) {
-        void sendCheckinBlast({
-          checkinUid: currentUser.uid,
-          checkinName: currentUser.firstName,
-          checkinGoal: personalGoal || 'their mission goal',
-          challengeId: id,
-          challengeName,
-          otherMembers,
-        })
-      }
-
       navigate(`/challenge/${id}`, { replace: true })
     } catch {
       setError('Failed to log check-in. Try again.')
@@ -182,9 +153,9 @@ export default function CheckInPage() {
           </p>
           <button
             className="inline-flex items-center justify-center gap-2 px-7 py-3.5
-                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       bg-emerald text-ivory font-body text-base uppercase tracking-wider
                        rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                       transition-all duration-150 hover:bg-dark/80"
+                       transition-all duration-150 hover:brightness-110"
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ArrowLeft size={15} strokeWidth={1.8} />
@@ -217,7 +188,23 @@ export default function CheckInPage() {
           </p>
         )}
 
-        <form onSubmit={e => void handleSubmit(e)} className="space-y-4">
+        <form onSubmit={e => void handleSubmit(e, true)} className="space-y-4">
+          <div>
+            <label htmlFor="value" className="label-light flex items-center gap-1.5">
+              <Hash size={11} strokeWidth={2} /> Amount (optional)
+            </label>
+            <input
+              id="value"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              placeholder="e.g. 3"
+              className="input-light"
+            />
+          </div>
+
           <div>
             <label htmlFor="note" className="label-light">
               Note (optional)
@@ -232,21 +219,29 @@ export default function CheckInPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <CheckCircle size={15} strokeWidth={2} />
-            {submitting ? 'Logging...' : 'Log Check-In'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={e => void handleSubmit(e, false)}
+              className="btn-danger flex-1 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <XCircle size={16} strokeWidth={2} />
+              Didn't
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn-retro flex-1 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CheckCircle size={16} strokeWidth={2} />
+              {submitting ? 'Logging...' : 'Did it'}
+            </button>
+          </div>
 
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-2 w-full px-7 py-3.5
-                       bg-dark text-cream font-body text-base uppercase tracking-wider
-                       rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                       transition-all duration-150 hover:bg-dark/80"
+            className="btn-outline w-full gap-2"
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ArrowLeft size={15} strokeWidth={1.8} />

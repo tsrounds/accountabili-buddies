@@ -178,7 +178,7 @@ export default function LoginPage() {
   }[step.name]
 
   return (
-    <div className="bg-dark min-h-screen flex flex-col font-body">
+    <div className="bg-navy min-h-screen flex flex-col font-body">
 
       {/* ── DARK HERO ZONE ── */}
       <div className="flex-1 flex flex-col items-center justify-end px-5 pb-8 pt-12">

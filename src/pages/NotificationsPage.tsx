@@ -15,6 +15,8 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import MascotZone from '@/components/MascotZone'
 import ZoneDivider from '@/components/ZoneDivider'
+import ReactionBar from '@/components/ReactionBar'
+import type { Reactions } from '@/components/ReactionBar'
 
 interface Notif {
   id: string
@@ -23,6 +25,7 @@ interface Notif {
   challengeName: string
   read: boolean
   createdAt: Timestamp | null
+  reactions?: Reactions
 }
 
 function formatTime(ts: Timestamp | null): string {
@@ -114,6 +117,14 @@ export default function NotificationsPage() {
                         {n.challengeName} · {formatTime(n.createdAt)}
                       </p>
                       <p className="font-body text-dark text-sm leading-relaxed">{n.message}</p>
+                      {currentUser && (
+                        <ReactionBar
+                          collectionName="ab_notifications"
+                          docId={n.id}
+                          reactions={n.reactions ?? {}}
+                          currentUid={currentUser.uid}
+                        />
+                      )}
                     </div>
                     <ArrowRight size={14} className="flex-shrink-0 text-dark/20 mt-1" strokeWidth={1.5} />
                   </div>

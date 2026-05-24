@@ -20,8 +20,8 @@ export default function Profile() {
       {/* ── DARK HERO ZONE ── */}
       <div className="zone-hero pb-10 flex flex-col items-center gap-3">
         {/* Large avatar ring — character badge */}
-        <div className="w-28 h-28 rounded-full bg-dark-teal border-4 border-neon flex items-center justify-center animate-fade-in shadow-glow">
-          <span className="font-display text-5xl text-cream leading-none">{initials}</span>
+        <div className="w-28 h-28 rounded-full bg-ivory/10 border-4 border-frost flex items-center justify-center animate-fade-in shadow-glow">
+          <span className="font-display text-5xl text-ivory leading-none">{initials}</span>
         </div>
 
         <div className="text-center animate-slide-up">
@@ -65,9 +65,9 @@ export default function Profile() {
         <div className="space-y-3 animate-slide-up-2">
           <button
             className="inline-flex items-center justify-center gap-2 w-full px-7 py-4
-                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       bg-emerald text-ivory font-body text-base uppercase tracking-wider
                        rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                       transition-all duration-150 hover:bg-dark/90"
+                       transition-all duration-150 hover:brightness-110"
           >
             <Settings size={16} strokeWidth={1.8} aria-hidden="true" />
             Settings

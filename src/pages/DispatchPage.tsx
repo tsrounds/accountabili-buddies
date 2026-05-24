@@ -213,7 +213,7 @@ export default function DispatchPage() {
                           size={18}
                           strokeWidth={1.5}
                           className={myRank === 1 ? 'text-neon' : 'text-dark/20'}
-                          fill={myRank === 1 ? '#E7F53C' : 'none'}
+                          fill={myRank === 1 ? '#146445' : 'none'}
                         />
                       </div>
                       {myRank > 1 && leader && (
@@ -250,7 +250,7 @@ export default function DispatchPage() {
                             size={14}
                             strokeWidth={1.5}
                             className={entry.weekCheckins > 0 ? 'text-neon flex-shrink-0' : 'text-dark/20 flex-shrink-0'}
-                            fill={entry.weekCheckins > 0 ? '#E7F53C' : 'none'}
+                            fill={entry.weekCheckins > 0 ? '#146445' : 'none'}
                           />
                           <div className="flex-1 min-w-0">
                             <span className="font-display text-dark text-sm">

@@ -158,9 +158,9 @@ export default function DossierPage() {
           </p>
           <button
             className="inline-flex items-center justify-center gap-2 px-7 py-3.5
-                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       bg-emerald text-ivory font-body text-base uppercase tracking-wider
                        rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                       transition-all duration-150 hover:bg-dark/80"
+                       transition-all duration-150 hover:brightness-110"
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ChevronRight size={15} strokeWidth={1.8} />

@@ -100,6 +100,7 @@ export default function CreateChallenge() {
         personalGoal: '',
         targetFrequency: 1,
         frequencyPeriod: 'per_week',
+        isReady: false,
         joinedAt: serverTimestamp(),
         dossierComplete: false,
         friendIntelComplete: false,
@@ -272,9 +273,9 @@ export default function CreateChallenge() {
             </button>
             <button
               className="inline-flex items-center justify-center gap-2 w-full px-7 py-3.5
-                         bg-dark text-cream font-body text-base uppercase tracking-wider
+                         bg-emerald text-ivory font-body text-base uppercase tracking-wider
                          rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                         transition-all duration-150 hover:bg-dark/80"
+                         transition-all duration-150 hover:brightness-110"
               onClick={() => void handleCopy()}
             >
               {copied ? <Check size={16} strokeWidth={2} /> : <Copy size={16} strokeWidth={1.8} />}
@@ -284,9 +285,9 @@ export default function CreateChallenge() {
 
           <button
             className="inline-flex items-center justify-center gap-2 w-full px-7 py-3.5
-                       bg-dark text-cream font-body text-base uppercase tracking-wider
+                       bg-emerald text-ivory font-body text-base uppercase tracking-wider
                        rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                       transition-all duration-150 hover:bg-dark/80"
+                       transition-all duration-150 hover:brightness-110"
             onClick={() => navigate(`/challenge/${share.challengeId}`)}
           >
             <ArrowRight size={16} strokeWidth={1.8} />
