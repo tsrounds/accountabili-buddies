@@ -12,12 +12,14 @@ import {
   signInWithPhoneNumber,
   type ConfirmationResult,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import { ArrowRight, Lock } from 'lucide-react'
 import MascotZone from '@/components/MascotZone'
 import ZoneDivider from '@/components/ZoneDivider'
+import { loadLocalProfile } from '@/lib/localCache'
+import { getOrCreateDeviceId } from '@/lib/deviceId'
 
 type Step =
   | { name: 'phone' }
@@ -50,8 +52,9 @@ export default function LoginPage() {
     if (currentUser) navigate(from, { replace: true })
   }, [currentUser, from, navigate])
 
+  const [cachedProfile] = useState(() => loadLocalProfile())
   const [step, setStep] = useState<Step>({ name: 'phone' })
-  const [phoneInput, setPhoneInput] = useState('+1')
+  const [phoneInput, setPhoneInput] = useState(() => cachedProfile?.phone ?? '+1')
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', ''])
   const [nameInput, setNameInput] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -111,6 +114,7 @@ export default function LoginPage() {
       const uid = credential.user.uid
       const userSnap = await getDoc(doc(db, 'ab_users', uid))
       if (userSnap.exists()) {
+        void updateDoc(doc(db, 'ab_users', uid), { deviceIds: arrayUnion(getOrCreateDeviceId()) })
         await refreshUser()
         navigate(from, { replace: true })
       } else {
@@ -137,6 +141,7 @@ export default function LoginPage() {
         phone: step.phone,
         createdAt: serverTimestamp(),
         avatarUrl: null,
+        deviceIds: [getOrCreateDeviceId()],
       })
       await refreshUser()
       navigate(from, { replace: true })
@@ -192,6 +197,11 @@ export default function LoginPage() {
         <h1 className="font-display text-cream text-4xl uppercase tracking-normal text-center leading-tight mt-1 animate-slide-up-2">
           Accountabili-<br />Buddies
         </h1>
+        {step.name === 'phone' && cachedProfile && (
+          <p className="font-body text-cream/60 text-sm text-center mt-3 animate-fade-in">
+            Welcome back, {cachedProfile.firstName}!
+          </p>
+        )}
       </div>
 
       {/* ── BLOB DIVIDER ── */}
