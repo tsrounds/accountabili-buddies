@@ -24,5 +24,8 @@ ui-debug.log
 *.local
 .vscode/
 
-# Claude Code
+# Claude Code (ignore settings/secrets, but track skills)
 .claude/
+!.claude/
+!.claude/skills/
+!.claude/skills/**
