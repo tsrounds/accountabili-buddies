@@ -143,13 +143,13 @@ export default function CheckInPage() {
     return (
       <div className="flex flex-col">
         <div className="zone-hero-compact pb-4 flex flex-col items-center">
-          <MascotZone mood="proud" size="sm" headline="MISSION LOGGED" />
+          <MascotZone mood="proud" size="sm" headline="NOTED." />
         </div>
         <ZoneDivider />
         <div className="zone-content flex flex-col items-center text-center space-y-4 py-4">
           <CheckCircle size={36} className="text-teal" strokeWidth={1.5} />
           <p className="font-body text-dark/50 text-sm">
-            Come back tomorrow, soldier.
+            See you tomorrow.
           </p>
           <button
             className="inline-flex items-center justify-center gap-2 px-7 py-3.5
@@ -159,7 +159,7 @@ export default function CheckInPage() {
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ArrowLeft size={15} strokeWidth={1.8} />
-            Back to Mission
+            Back
           </button>
         </div>
       </div>
@@ -171,7 +171,7 @@ export default function CheckInPage() {
   return (
     <div className="flex flex-col">
       <div className="zone-hero-compact pb-4 flex flex-col items-center">
-        <MascotZone mood="lagging" size="sm" headline="TIME TO SHOW UP" />
+        <MascotZone mood="lagging" size="sm" headline="OKAY. LET'S GO." />
         {challengeName && (
           <p className="font-body text-cream/50 text-sm mt-1">{challengeName}</p>
         )}

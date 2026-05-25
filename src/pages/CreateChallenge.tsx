@@ -113,7 +113,7 @@ export default function CreateChallenge() {
         challengeName: name.trim(),
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create mission. Try again.')
+      setError(err instanceof Error ? err.message : 'Failed to create. Try again.')
     } finally {
       setSubmitting(false)
     }
@@ -145,7 +145,7 @@ export default function CreateChallenge() {
     if (!share) return
     try {
       await navigator.share({
-        title: `Join my mission: ${share.challengeName}`,
+        title: `Join: ${share.challengeName}`,
         text: "I'm starting a challenge on Accountabili-Buddies. Join me!",
         url: share.inviteUrl,
       })
@@ -246,12 +246,12 @@ export default function CreateChallenge() {
     return (
       <div className="flex flex-col">
         <div className="zone-hero-compact pb-4 flex flex-col items-center">
-          <MascotZone mood="celebrate" size="sm" headline="MISSION CREATED" />
+          <MascotZone mood="celebrate" size="sm" headline="THERE IT IS." />
         </div>
         <ZoneDivider />
         <div className="zone-content space-y-4">
           <p className="font-body text-dark/60 text-sm leading-relaxed text-center">
-            Your mission is ready. Enlist your buddies with this invite code.
+            It's set up. Share this with your people.
           </p>
 
           <div className="card-light text-center py-5 space-y-2">
@@ -291,7 +291,7 @@ export default function CreateChallenge() {
             onClick={() => navigate(`/challenge/${share.challengeId}`)}
           >
             <ArrowRight size={16} strokeWidth={1.8} />
-            View Mission Briefing
+            Open It
           </button>
         </div>
       </div>
@@ -302,7 +302,7 @@ export default function CreateChallenge() {
   return (
     <div className="flex flex-col">
       <div className="zone-hero-compact pb-4 flex flex-col items-center">
-        <MascotZone mood="idle" size="sm" headline="BUILD YOUR MISSION" />
+        <MascotZone mood="idle" size="sm" headline="SET IT UP." />
       </div>
       <ZoneDivider />
       <div className="zone-content">
@@ -315,7 +315,7 @@ export default function CreateChallenge() {
         <form onSubmit={e => void handleSubmit(e)} className="space-y-4">
           {/* Challenge name */}
           <div>
-            <label htmlFor="name" className="label-light">Mission Name</label>
+            <label htmlFor="name" className="label-light">Challenge Name</label>
             <input
               id="name"
               type="text"
@@ -451,7 +451,7 @@ export default function CreateChallenge() {
             disabled={submitting}
             className="btn-retro w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Creating Mission...' : 'Create Mission'}
+            {submitting ? 'Creating...' : 'Create Challenge'}
           </button>
         </form>
       </div>

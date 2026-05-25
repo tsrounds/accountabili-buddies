@@ -104,7 +104,7 @@ export default function ChallengeDetail() {
         getDocs(collection(db, 'ab_challenges', id, 'leaderboard')),
         getDocs(collection(db, 'ab_challenges', id, 'dossiers')),
       ])
-      if (!challengeSnap.exists()) { setError('Mission not found.'); return }
+      if (!challengeSnap.exists()) { setError('Challenge not found.'); return }
       setChallenge(challengeSnap.data() as Challenge)
       setMembers(membersSnap.docs.map(d => d.data() as Member))
       const lb = lbSnap.docs
@@ -114,7 +114,7 @@ export default function ChallengeDetail() {
       const dmap: Record<string, Dossier> = {}
       dossiersSnap.docs.forEach(d => { dmap[d.id] = d.data() as Dossier })
       setDossiers(dmap)
-    } catch { setError('Failed to load mission.') }
+    } catch { setError('Failed to load.') }
     finally { setLoading(false) }
   }
 
@@ -191,7 +191,7 @@ export default function ChallengeDetail() {
   if (error || !challenge) {
     return (
       <div className="px-4 py-10 text-center">
-        <p className="font-body text-retro-red text-base">{error ?? 'Mission not found.'}</p>
+        <p className="font-body text-retro-red text-base">{error ?? 'Challenge not found.'}</p>
       </div>
     )
   }
@@ -238,7 +238,7 @@ export default function ChallengeDetail() {
                                       'lagging'
 
   const heroTagline =
-    challenge.status === 'complete' ? 'MISSION COMPLETE' :
+    challenge.status === 'complete' ? 'DONE. YOU DID IT.' :
     challenge.status === 'lobby'    ? 'READY UP' :
     checkedInToday                  ? `RANK #${myRank > 0 ? myRank : '?'} — CRUSHED IT` :
                                       `RANK #${myRank > 0 ? myRank : '?'} — GET MOVING`
@@ -451,7 +451,7 @@ export default function ChallengeDetail() {
             )}
             {challenge.description && (
               <div className={myMember ? 'border-t border-ink/10 pt-3' : ''}>
-                <p className="label-light">Mission Brief</p>
+                <p className="label-light">About</p>
                 <p className="font-body text-ink/70 text-sm leading-relaxed">{challenge.description}</p>
               </div>
             )}
@@ -542,7 +542,7 @@ export default function ChallengeDetail() {
                     onClick={async () => {
                       try {
                         await navigator.share({
-                          title: `Join my mission: ${challenge.name}`,
+                          title: `Join: ${challenge.name}`,
                           text: "I'm starting a challenge on Accountabili-Buddies. Join me!",
                           url: `${window.location.origin}/join/${inviteCode}`,
                         })
@@ -576,7 +576,7 @@ export default function ChallengeDetail() {
               <div className="space-y-2">
                 <p className="font-body text-ink/50 text-sm text-center leading-relaxed">
                   {allGoalsSet
-                    ? 'Mission auto-launches when everyone locks in.'
+                    ? 'Starts automatically when everyone locks in.'
                     : `${goalsSetCount}/${members.length} goals set before deploying`}
                 </p>
                 <button
@@ -585,7 +585,7 @@ export default function ChallengeDetail() {
                   disabled={starting || !allGoalsSet}
                 >
                   <Rocket size={18} strokeWidth={1.8} aria-hidden="true" />
-                  {starting ? 'Deploying…' : 'Deploy Now (skip stragglers)'}
+                  {starting ? 'Starting…' : 'Start Now (skip waiting)'}
                 </button>
               </div>
             )}

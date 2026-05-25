@@ -80,7 +80,7 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col">
       <div className="zone-hero-compact pb-4 flex flex-col items-center">
-        <MascotZone mood="idle" size="sm" headline="YOUR DISPATCHES" />
+        <MascotZone mood="idle" size="sm" headline="YOUR UPDATES" />
       </div>
       <ZoneDivider />
       <div className="zone-content">
@@ -94,10 +94,10 @@ export default function NotificationsPage() {
           <div className="flex flex-col items-center text-center py-12 space-y-2">
             <Bell size={28} className="text-dark/20" strokeWidth={1.5} />
             <p className="font-display text-dark/40 uppercase tracking-wider text-sm">
-              No dispatches yet.
+              Nothing yet.
             </p>
             <p className="font-body text-dark/30 text-xs">
-              Check in to a mission and your buddies will hear about it.
+              Check in and your people will see it here.
             </p>
           </div>
         ) : (

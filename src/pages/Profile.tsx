@@ -27,7 +27,7 @@ export default function Profile() {
         <div className="text-center animate-slide-up">
           <p className="font-body text-cream/40 text-xs uppercase tracking-[0.25em]">Agent</p>
           <h2 className="font-display text-4xl text-cream uppercase tracking-wide leading-tight">
-            {currentUser?.firstName ?? 'Recruit'}
+            {currentUser?.firstName ?? 'You'}
           </h2>
           {currentUser?.phone && (
             <p className="font-body text-cream/40 text-sm mt-1">{currentUser.phone}</p>

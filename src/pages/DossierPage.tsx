@@ -51,7 +51,7 @@ export default function DossierPage() {
           getDocs(collection(db, 'ab_challenges', id!, 'members')),
         ])
         if (!challengeSnap.exists()) {
-          setError('Mission not found.')
+          setError('Challenge not found.')
           return
         }
         setChallengeName(challengeSnap.data().name as string)
@@ -164,7 +164,7 @@ export default function DossierPage() {
             onClick={() => navigate(`/challenge/${id}`)}
           >
             <ChevronRight size={15} strokeWidth={1.8} />
-            Back to Mission
+            Back
           </button>
         </div>
       </div>
@@ -178,7 +178,7 @@ export default function DossierPage() {
       <div className="zone-hero-compact pb-4 flex flex-col items-center">
         <MascotZone mood="idle" size="sm" headline="SPILL THE BEANS" />
         <p className="font-body text-cream/40 text-xs uppercase tracking-wider mt-1">
-          Mission: {challengeName}
+          {challengeName}
         </p>
       </div>
       <ZoneDivider />
