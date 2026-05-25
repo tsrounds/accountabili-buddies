@@ -9,6 +9,7 @@ import {
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
 import { doc, getDoc, type Timestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
+import { saveLocalProfile, loadLocalProfile, clearLocalProfile } from '@/lib/localCache'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -18,8 +19,9 @@ export interface AbUser {
   uid: string
   firstName: string
   phone: string
-  createdAt: Timestamp
+  createdAt?: Timestamp
   avatarUrl: string | null
+  deviceIds?: string[]
 }
 
 interface AuthContextValue {
@@ -46,9 +48,12 @@ export function useAuthContext() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AbUser | null>(null)
-  // loading starts true so auth state resolves before any route guard runs
-  const [loading, setLoading] = useState(true)
+  const cached = loadLocalProfile()
+  const [currentUser, setCurrentUser] = useState<AbUser | null>(
+    cached ? { ...cached, avatarUrl: null } : null
+  )
+  // skip spinner if we have a cached profile — Firebase will verify silently
+  const [loading, setLoading] = useState(!cached)
 
   const refreshUser = useCallback(async () => {
     const firebaseUser = auth.currentUser
@@ -62,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
+        clearLocalProfile()
         setCurrentUser(null)
         setLoading(false)
         return
@@ -70,14 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const snap = await getDoc(doc(db, 'ab_users', firebaseUser.uid))
         if (snap.exists()) {
-          setCurrentUser(snap.data() as AbUser)
+          const profile = snap.data() as AbUser
+          setCurrentUser(profile)
+          saveLocalProfile(profile)
         } else {
           // New user — profile not yet created (LoginPage will handle name entry)
           setCurrentUser(null)
         }
       } catch (err) {
         console.error('[AuthContext] Firestore fetch error:', err)
-        setCurrentUser(null)
+        // Keep warm-start value so app stays usable during transient network errors
       } finally {
         setLoading(false)
       }
@@ -87,8 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signOut() {
+    clearLocalProfile()
     await firebaseSignOut(auth)
-    // onAuthStateChanged will fire and clear currentUser automatically
   }
 
   return (

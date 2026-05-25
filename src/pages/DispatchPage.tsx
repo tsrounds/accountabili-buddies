@@ -123,7 +123,7 @@ export default function DispatchPage() {
             if (!entry.firstName) {
               const userSnap = await getDoc(doc(db, 'ab_users', entry.uid))
               if (userSnap.exists()) {
-                entry.firstName = userSnap.data().firstName ?? 'Recruit'
+                entry.firstName = userSnap.data().firstName ?? 'Someone'
               }
             }
           }
@@ -143,7 +143,7 @@ export default function DispatchPage() {
   return (
     <div className="flex flex-col">
       <div className="zone-hero-compact pb-4 flex flex-col items-center">
-        <MascotZone mood="idle" size="sm" headline="WEEKLY DISPATCH" />
+        <MascotZone mood="idle" size="sm" headline="WEEKLY RECAP" />
         {weekId && (
           <p className="font-body text-cream/50 text-xs uppercase tracking-wider mt-1">
             {weekId}
@@ -155,17 +155,17 @@ export default function DispatchPage() {
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <p className="font-display text-dark/50 uppercase tracking-widest text-sm animate-pulse">
-              Decrypting...
+              Loading...
             </p>
           </div>
         ) : dispatches.length === 0 ? (
           <div className="flex flex-col items-center text-center py-12 space-y-3">
             <Newspaper size={32} className="text-dark/20" strokeWidth={1.5} />
             <p className="font-display text-dark/40 uppercase tracking-wider text-sm">
-              No dispatches yet.
+              Nothing here yet.
             </p>
             <p className="font-body text-dark/30 text-xs max-w-xs">
-              Dispatches are generated Sunday evening. Check back after your first full week of missions.
+              Recaps show up Sunday evening. Check back after your first full week.
             </p>
           </div>
         ) : (
@@ -180,7 +180,7 @@ export default function DispatchPage() {
                   {/* Mission header */}
                   <div className="border-b border-dark/15 pb-2">
                     <p className="font-display text-[9px] text-dark/30 uppercase tracking-widest">
-                      Mission Report
+                      Week
                     </p>
                     <h3 className="font-display text-xl text-dark uppercase tracking-wide leading-tight">
                       {dispatch.challengeName}
@@ -213,7 +213,7 @@ export default function DispatchPage() {
                           size={18}
                           strokeWidth={1.5}
                           className={myRank === 1 ? 'text-neon' : 'text-dark/20'}
-                          fill={myRank === 1 ? '#E7F53C' : 'none'}
+                          fill={myRank === 1 ? '#4B5694' : 'none'}
                         />
                       </div>
                       {myRank > 1 && leader && (
@@ -250,7 +250,7 @@ export default function DispatchPage() {
                             size={14}
                             strokeWidth={1.5}
                             className={entry.weekCheckins > 0 ? 'text-neon flex-shrink-0' : 'text-dark/20 flex-shrink-0'}
-                            fill={entry.weekCheckins > 0 ? '#E7F53C' : 'none'}
+                            fill={entry.weekCheckins > 0 ? '#4B5694' : 'none'}
                           />
                           <div className="flex-1 min-w-0">
                             <span className="font-display text-dark text-sm">

@@ -12,12 +12,14 @@ import {
   signInWithPhoneNumber,
   type ConfirmationResult,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import { ArrowRight, Lock } from 'lucide-react'
 import MascotZone from '@/components/MascotZone'
 import ZoneDivider from '@/components/ZoneDivider'
+import { loadLocalProfile } from '@/lib/localCache'
+import { getOrCreateDeviceId } from '@/lib/deviceId'
 
 type Step =
   | { name: 'phone' }
@@ -50,8 +52,9 @@ export default function LoginPage() {
     if (currentUser) navigate(from, { replace: true })
   }, [currentUser, from, navigate])
 
+  const [cachedProfile] = useState(() => loadLocalProfile())
   const [step, setStep] = useState<Step>({ name: 'phone' })
-  const [phoneInput, setPhoneInput] = useState('+1')
+  const [phoneInput, setPhoneInput] = useState(() => cachedProfile?.phone ?? '+1')
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', ''])
   const [nameInput, setNameInput] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -111,6 +114,7 @@ export default function LoginPage() {
       const uid = credential.user.uid
       const userSnap = await getDoc(doc(db, 'ab_users', uid))
       if (userSnap.exists()) {
+        void updateDoc(doc(db, 'ab_users', uid), { deviceIds: arrayUnion(getOrCreateDeviceId()) })
         await refreshUser()
         navigate(from, { replace: true })
       } else {
@@ -137,6 +141,7 @@ export default function LoginPage() {
         phone: step.phone,
         createdAt: serverTimestamp(),
         avatarUrl: null,
+        deviceIds: [getOrCreateDeviceId()],
       })
       await refreshUser()
       navigate(from, { replace: true })
@@ -172,23 +177,31 @@ export default function LoginPage() {
   }
 
   const stepLabel = {
-    phone: 'ENLISTMENT',
+    phone: 'SIGN IN',
     otp:   'VERIFICATION',
-    name:  'IDENTIFICATION',
+    name:  'QUICK QUESTION',
   }[step.name]
 
   return (
-    <div className="bg-dark min-h-screen flex flex-col font-body">
+    <div className="bg-navy min-h-screen flex flex-col font-body">
 
       {/* ── DARK HERO ZONE ── */}
-      <div className="flex-1 flex flex-col items-center justify-end px-5 pb-8 pt-12">
+      <div
+        className="flex-1 flex flex-col items-center justify-end px-5 pb-8"
+        style={{ paddingTop: 'max(3rem, calc(env(safe-area-inset-top) + 1.5rem))' }}
+      >
         <MascotZone mood="idle" />
         <p className="mt-4 font-display text-cream/40 text-xs uppercase tracking-[0.25em] animate-slide-up-1">
           {stepLabel}
         </p>
-        <h1 className="font-display text-cream text-5xl uppercase tracking-wide text-center leading-none mt-1 animate-slide-up-2">
+        <h1 className="font-display text-cream text-4xl uppercase tracking-normal text-center leading-tight mt-1 animate-slide-up-2">
           Accountabili-<br />Buddies
         </h1>
+        {step.name === 'phone' && cachedProfile && (
+          <p className="font-body text-cream/60 text-sm text-center mt-3 animate-fade-in">
+            Welcome back, {cachedProfile.firstName}!
+          </p>
+        )}
       </div>
 
       {/* ── BLOB DIVIDER ── */}
@@ -247,12 +260,12 @@ export default function LoginPage() {
           {step.name === 'otp' && (
             <form onSubmit={handleOtpSubmit} className="space-y-4 animate-slide-up">
               <p className="font-body text-dark/60 text-sm text-center leading-relaxed">
-                Code dispatched to{' '}
+                Code sent to{' '}
                 <span className="text-dark font-semibold">{step.phone}</span>
               </p>
               <div>
                 <label className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-2 text-center">
-                  Clearance Code
+                  Your Code
                 </label>
                 <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, i) => (
@@ -297,7 +310,7 @@ export default function LoginPage() {
           {step.name === 'name' && (
             <form onSubmit={handleNameSubmit} className="space-y-4 animate-slide-up">
               <p className="font-body text-dark/60 text-sm leading-relaxed text-center">
-                What should we call you, recruit?
+                What should we call you?
               </p>
               <div>
                 <label htmlFor="firstName" className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-1.5">
@@ -323,8 +336,8 @@ export default function LoginPage() {
                 disabled={submitting || !nameInput.trim()}
                 className="btn-retro-xl w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Reporting for duty…' : (
-                  <>Report for Duty <ArrowRight size={16} aria-hidden="true" /></>
+                {submitting ? 'Joining…' : (
+                  <>I'm In <ArrowRight size={16} aria-hidden="true" /></>
                 )}
               </button>
             </form>

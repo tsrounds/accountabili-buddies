@@ -102,10 +102,13 @@ export default function NotificationBell() {
 
       {/* Drop-down panel */}
       {open && (
-        <div className="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-dark-teal border border-cream/15 rounded-2xl shadow-float z-50">
+        <div
+          className="absolute right-0 top-8 max-h-96 overflow-y-auto bg-dark-teal border border-cream/15 rounded-2xl shadow-float z-50"
+          style={{ width: 'min(20rem, calc(100vw - 2rem))' }}
+        >
           <div className="flex items-center justify-between px-3 py-2 border-b border-cream/10 sticky top-0 bg-dark-teal rounded-t-2xl">
             <span className="font-display text-xs text-cream/60 uppercase tracking-wider">
-              Dispatches
+              Updates
             </span>
             <button onClick={() => setOpen(false)} className="text-cream/40 hover:text-cream">
               <X size={14} strokeWidth={2} />
@@ -115,7 +118,7 @@ export default function NotificationBell() {
           {notifs.length === 0 ? (
             <div className="px-3 py-6 text-center">
               <p className="font-body text-cream/40 text-xs">
-                No dispatches yet. Stay active.
+                Nothing yet. Stay active.
               </p>
             </div>
           ) : (

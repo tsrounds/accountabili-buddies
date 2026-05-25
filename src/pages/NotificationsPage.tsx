@@ -15,6 +15,8 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import MascotZone from '@/components/MascotZone'
 import ZoneDivider from '@/components/ZoneDivider'
+import ReactionBar from '@/components/ReactionBar'
+import type { Reactions } from '@/components/ReactionBar'
 
 interface Notif {
   id: string
@@ -23,6 +25,7 @@ interface Notif {
   challengeName: string
   read: boolean
   createdAt: Timestamp | null
+  reactions?: Reactions
 }
 
 function formatTime(ts: Timestamp | null): string {
@@ -77,7 +80,7 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col">
       <div className="zone-hero-compact pb-4 flex flex-col items-center">
-        <MascotZone mood="idle" size="sm" headline="YOUR DISPATCHES" />
+        <MascotZone mood="idle" size="sm" headline="YOUR UPDATES" />
       </div>
       <ZoneDivider />
       <div className="zone-content">
@@ -91,10 +94,10 @@ export default function NotificationsPage() {
           <div className="flex flex-col items-center text-center py-12 space-y-2">
             <Bell size={28} className="text-dark/20" strokeWidth={1.5} />
             <p className="font-display text-dark/40 uppercase tracking-wider text-sm">
-              No dispatches yet.
+              Nothing yet.
             </p>
             <p className="font-body text-dark/30 text-xs">
-              Check in to a mission and your buddies will hear about it.
+              Check in and your people will see it here.
             </p>
           </div>
         ) : (
@@ -114,6 +117,14 @@ export default function NotificationsPage() {
                         {n.challengeName} · {formatTime(n.createdAt)}
                       </p>
                       <p className="font-body text-dark text-sm leading-relaxed">{n.message}</p>
+                      {currentUser && (
+                        <ReactionBar
+                          collectionName="ab_notifications"
+                          docId={n.id}
+                          reactions={n.reactions ?? {}}
+                          currentUid={currentUser.uid}
+                        />
+                      )}
                     </div>
                     <ArrowRight size={14} className="flex-shrink-0 text-dark/20 mt-1" strokeWidth={1.5} />
                   </div>

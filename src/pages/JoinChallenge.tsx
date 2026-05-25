@@ -119,6 +119,7 @@ export default function JoinChallenge() {
           personalGoal: personalGoal.trim(),
           targetFrequency: parseInt(targetFrequency, 10),
           frequencyPeriod,
+          isReady: false,
           joinedAt: serverTimestamp(),
           dossierComplete: false,
           friendIntelComplete: false,
@@ -126,7 +127,7 @@ export default function JoinChallenge() {
       )
       navigate(`/challenge/${lookup.challenge.challengeId}`, { replace: true })
     } catch {
-      setSubmitError('Failed to join mission. Try again.')
+      setSubmitError('Failed to join. Try again.')
     } finally {
       setSubmitting(false)
     }
@@ -137,19 +138,19 @@ export default function JoinChallenge() {
     return (
       <div className="flex flex-col">
         <div className="zone-hero-compact pb-4 flex flex-col items-center">
-          <MascotZone mood="proud" size="sm" headline="ALREADY ENLISTED" />
+          <MascotZone mood="proud" size="sm" headline="ALREADY IN." />
         </div>
         <ZoneDivider />
         <div className="zone-content flex flex-col items-center text-center space-y-4 py-4">
           <p className="font-body text-dark/60 text-sm">
-            You're already enlisted in this mission.
+            You're already in this one.
           </p>
           <button
             className="btn-retro gap-2"
             onClick={() => navigate(`/challenge/${lookup.challengeId}`)}
           >
             <ArrowRight size={16} strokeWidth={1.8} />
-            View Mission
+            Go to It
           </button>
         </div>
       </div>
@@ -162,7 +163,7 @@ export default function JoinChallenge() {
         <MascotZone
           mood={lookup.status === 'found' ? 'proud' : 'idle'}
           size="sm"
-          headline={lookup.status === 'found' ? 'MISSION FOUND' : 'JOIN THE FIGHT'}
+          headline={lookup.status === 'found' ? 'FOUND IT.' : 'JOIN UP.'}
         />
       </div>
       <ZoneDivider />
@@ -228,7 +229,7 @@ export default function JoinChallenge() {
               )}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
                 <div>
-                  <p className="label-light">Commander</p>
+                  <p className="label-light">Started by</p>
                   <p className="font-body text-dark text-sm">{lookup.challenge.creatorFirstName}</p>
                 </div>
                 <div>
@@ -246,7 +247,7 @@ export default function JoinChallenge() {
                   </p>
                 </div>
                 <div>
-                  <p className="label-light">Recruits</p>
+                  <p className="label-light">Members</p>
                   <p className="font-body text-dark text-sm">{lookup.challenge.memberCount}</p>
                 </div>
               </div>
@@ -254,7 +255,7 @@ export default function JoinChallenge() {
 
             {/* Goal-setting form */}
             <form onSubmit={e => void handleJoinSubmit(e)} className="space-y-4 border-t border-dark/10 pt-4">
-              <p className="label-light mb-0">Set Your Mission</p>
+              <p className="label-light mb-0">Your Goal</p>
 
               {submitError && (
                 <p className="font-body text-retro-red text-sm border border-retro-red/30 bg-retro-red/5 px-3 py-2 rounded-2xl">
@@ -310,8 +311,8 @@ export default function JoinChallenge() {
                 disabled={submitting || !personalGoal.trim()}
                 className="btn-retro w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Enlisting...' : (
-                  <>Enlist in Mission <ArrowRight size={14} /></>
+                {submitting ? 'Joining...' : (
+                  <>Join Challenge <ArrowRight size={14} /></>
                 )}
               </button>
             </form>

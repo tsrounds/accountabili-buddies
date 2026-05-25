@@ -187,7 +187,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Weekly Dispatch teaser */}
+        {/* Weekly Recap teaser */}
         {hasDispatch && (
           <Link
             to="/dispatch"
@@ -195,7 +195,7 @@ export default function Home() {
           >
             <Newspaper size={14} className="text-neon flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
             <span className="font-display text-xs uppercase tracking-wider text-cream">
-              Weekly Dispatch — Read Now →
+              Weekly Recap — Read Now →
             </span>
           </Link>
         )}
@@ -239,7 +239,7 @@ export default function Home() {
                                 ? 'text-dark/30'
                                 : 'text-dark/15'
                           }
-                          fill={c.status === 'active' && c.checkedInToday ? '#E7F53C' : 'none'}
+                          fill={c.status === 'active' && c.checkedInToday ? '#4B5694' : 'none'}
                         />
                         <span className="font-display text-[10px] uppercase tracking-wide text-dark/40">
                           {c.status === 'active'
@@ -256,14 +256,14 @@ export default function Home() {
             <div className="flex gap-3 mt-5 animate-slide-up-4">
               <Link to="/create" className="btn-retro gap-2 flex-1 justify-center min-h-[44px]">
                 <PlusCircle size={15} strokeWidth={1.8} aria-hidden="true" />
-                New Mission
+                New Challenge
               </Link>
               <Link
                 to="/join"
                 className="inline-flex items-center justify-center gap-2 flex-1 px-5 py-3
-                           bg-dark text-cream font-body text-base uppercase tracking-wider
+                           bg-emerald text-ivory font-body text-base uppercase tracking-wider
                            rounded-full min-h-[44px] cursor-pointer
-                           border-2 border-dark/20 transition-all duration-150 hover:bg-dark/80"
+                           border-2 border-dark/20 transition-all duration-150 hover:brightness-110"
               >
                 <Users size={15} strokeWidth={1.8} aria-hidden="true" />
                 Join One
@@ -273,7 +273,7 @@ export default function Home() {
         ) : (
           <div className="flex flex-col items-center text-center py-8 gap-5 animate-fade-in">
             <p className="font-display text-dark text-3xl uppercase leading-tight tracking-wide">
-              No missions.<br />Bold choice.
+              Nothing here.<br />Bold strategy.
             </p>
             <p className="font-body text-dark/60 text-base leading-relaxed max-w-xs">
               Create a challenge or join your crew — accountability starts here.
@@ -286,9 +286,9 @@ export default function Home() {
               <Link
                 to="/join"
                 className="inline-flex items-center gap-2 px-6 py-3
-                           bg-dark text-cream font-body text-base uppercase tracking-wider
+                           bg-emerald text-ivory font-body text-base uppercase tracking-wider
                            rounded-full min-h-[44px] cursor-pointer border-2 border-dark/20
-                           transition-all duration-150 hover:bg-dark/80"
+                           transition-all duration-150 hover:brightness-110"
               >
                 <Users size={15} strokeWidth={1.8} aria-hidden="true" />
                 Join One
