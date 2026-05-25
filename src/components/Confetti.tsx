@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 // Lightweight CSS confetti burst — no dependencies. Render conditionally;
 // it auto-fades via the confetti-fall animation and calls onDone after ~2.4s.
-const COLORS = ['#010097', '#8AE0FC', '#146445', '#F2994A', '#F9FAF0']
+const COLORS = ['#111844', '#7288AE', '#4B5694', '#EAE0CF', '#FAF6EA']
 
 export default function Confetti({ count = 80 }: { count?: number }) {
   const pieces = useMemo(

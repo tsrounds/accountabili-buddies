@@ -8,29 +8,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Doc design system (semantic names) ──
-        dust: '#DCD5D3',     // app background / default surface
-        navy: '#010097',     // primary buttons, active states, key CTAs
-        ivory: '#F9FAF0',    // cards, inputs, elevated surfaces
-        frost: '#8AE0FC',    // progress bars, highlights, success states
-        emerald: '#146445',  // secondary actions, badges, positive feedback
-        flame: '#F2994A',    // streak flame accent (kept warm on purpose)
-        ink: '#1A1A1A',      // primary text on light surfaces
-        muted: '#6B6B6B',    // secondary / muted labels
+        // ── Design system (semantic names) — blue + cream palette ──
+        dust: '#EAE0CF',     // app background / default surface (cream)
+        navy: '#111844',     // primary buttons, hero, active states, key CTAs
+        ivory: '#FAF6EA',    // cards, inputs, elevated surfaces + light text on navy
+        frost: '#7288AE',    // progress bars, highlights, streaks (slate)
+        emerald: '#4B5694',  // secondary actions, badges, positive feedback (indigo)
+        flame: '#7288AE',    // streak accent (slate, on-palette)
+        ink: '#111844',      // primary text on light surfaces (deep navy)
+        muted: '#5C6488',    // secondary / muted labels
 
         // ── Legacy aliases — remapped to the new palette by role so the
-        //    existing pages adopt the light theme automatically. ──
-        dark: '#1A1A1A',         // was near-black surface → now primary text
-        'dark-teal': '#010097',  // dark card / floating nav surface → navy
-        cream: '#F9FAF0',        // light text on dark + elevated surface → ivory
-        neon: '#146445',         // pop accent → emerald (reads on light + navy)
-        teal: '#146445',         // small icon accent → emerald
-        'light-purple': '#DCD5D3', // light content zone → dust grey
-        purple: '#010097',
-        slate: '#F9FAF0',
-        mustard: '#146445',
-        olive: '#146445',
-        'retro-red': '#D7263D',  // errors / danger (readable on light)
+        //    existing pages adopt the theme automatically. ──
+        dark: '#111844',         // near-black surface → deep navy (text + dark surface)
+        'dark-teal': '#111844',  // dark card / floating nav surface → deep navy
+        cream: '#FAF6EA',        // light text on dark + elevated surface → near-white
+        neon: '#4B5694',         // pop accent → indigo (reads on cream + navy)
+        teal: '#7288AE',         // small icon accent → slate
+        'light-purple': '#EAE0CF', // light content zone → cream
+        purple: '#111844',
+        slate: '#FAF6EA',
+        mustard: '#4B5694',
+        olive: '#4B5694',
+        'retro-red': '#D7263D',  // errors / danger (kept distinct)
       },
       fontFamily: {
         // Sauce Tomato (doc display face) is not bundled in this repo; Tholoes is
@@ -43,10 +43,10 @@ const config: Config = {
         retro: '0 2px 16px rgba(26,26,26,0.10)',
         'retro-sm': '0 1px 8px rgba(26,26,26,0.08)',
         card: '0 4px 20px rgba(26,26,26,0.08)',
-        glow: '0 0 24px rgba(138,224,252,0.45)',
-        clay: 'inset 0 -3px 0 rgba(0,0,0,0.18), 0 2px 12px rgba(26,26,26,0.12)',
-        'clay-sm': 'inset 0 -2px 0 rgba(0,0,0,0.15), 0 1px 8px rgba(26,26,26,0.10)',
-        float: '0 8px 32px rgba(1,0,151,0.18)',
+        glow: '0 0 24px rgba(114,136,174,0.50)',
+        clay: 'inset 0 -3px 0 rgba(0,0,0,0.18), 0 2px 12px rgba(17,24,68,0.12)',
+        'clay-sm': 'inset 0 -2px 0 rgba(0,0,0,0.15), 0 1px 8px rgba(17,24,68,0.10)',
+        float: '0 8px 32px rgba(17,24,68,0.22)',
       },
       borderRadius: {
         '4xl': '2rem',

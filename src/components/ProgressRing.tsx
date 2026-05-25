@@ -37,11 +37,11 @@ export default function ProgressRing({
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="rgba(26,26,26,0.10)" strokeWidth={stroke}
+          fill="none" stroke="rgba(17,24,68,0.10)" strokeWidth={stroke}
         />
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="#8AE0FC" strokeWidth={stroke} strokeLinecap="round"
+          fill="none" stroke="#7288AE" strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.34, 1.2, 0.64, 1)' }}

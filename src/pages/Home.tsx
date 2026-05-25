@@ -239,7 +239,7 @@ export default function Home() {
                                 ? 'text-dark/30'
                                 : 'text-dark/15'
                           }
-                          fill={c.status === 'active' && c.checkedInToday ? '#146445' : 'none'}
+                          fill={c.status === 'active' && c.checkedInToday ? '#4B5694' : 'none'}
                         />
                         <span className="font-display text-[10px] uppercase tracking-wide text-dark/40">
                           {c.status === 'active'

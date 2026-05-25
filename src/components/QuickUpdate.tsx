@@ -97,7 +97,7 @@ export default function QuickUpdate({
                 Swipe → did it · ← skipped
               </p>
               <p className="font-display text-2xl uppercase tracking-wide"
-                 style={{ color: hint === 'did' ? '#146445' : hint === 'skip' ? '#D7263D' : '#1A1A1A' }}>
+                 style={{ color: hint === 'did' ? '#4B5694' : hint === 'skip' ? '#D7263D' : '#111844' }}>
                 {hint === 'did' ? 'Did it!' : hint === 'skip' ? 'Skipped' : 'Did you do it?'}
               </p>
             </motion.div>

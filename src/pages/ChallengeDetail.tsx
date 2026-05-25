@@ -328,7 +328,7 @@ export default function ChallengeDetail() {
               <p className="font-body text-ink text-sm leading-snug">{myMember.personalGoal || '—'}</p>
               <div className="flex items-center gap-1.5 mt-2">
                 <Flame size={16} strokeWidth={2} className={myStreak > 0 ? 'text-flame' : 'text-ink/25'}
-                       fill={myStreak > 0 ? '#F2994A' : 'none'} aria-hidden="true" />
+                       fill={myStreak > 0 ? '#7288AE' : 'none'} aria-hidden="true" />
                 <span className="font-display text-ink text-lg leading-none">{myStreak}</span>
                 <span className="font-body text-ink/50 text-xs">day streak</span>
               </div>
@@ -379,7 +379,7 @@ export default function ChallengeDetail() {
                     <div className="flex items-center justify-center gap-2 mt-1.5">
                       <span className="font-display text-ink text-sm">{pct}%</span>
                       <span className="inline-flex items-center gap-0.5 text-flame">
-                        <Flame size={11} strokeWidth={2} fill={(lb?.currentStreak ?? 0) > 0 ? '#F2994A' : 'none'} />
+                        <Flame size={11} strokeWidth={2} fill={(lb?.currentStreak ?? 0) > 0 ? '#7288AE' : 'none'} />
                         <span className="font-display text-ink text-xs">{lb?.currentStreak ?? 0}</span>
                       </span>
                     </div>
@@ -417,14 +417,14 @@ export default function ChallengeDetail() {
                       </div>
                       {(entry.currentStreak ?? 0) > 0 && (
                         <span className="inline-flex items-center gap-0.5 text-flame flex-shrink-0">
-                          <Flame size={12} strokeWidth={2} fill="#F2994A" />
+                          <Flame size={12} strokeWidth={2} fill="#7288AE" />
                           <span className="font-display text-ink text-xs">{entry.currentStreak}</span>
                         </span>
                       )}
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <Zap size={13} strokeWidth={1.5} aria-hidden="true"
                              className={entry.lastCheckinDate === today ? 'text-emerald' : 'text-ink/20'}
-                             fill={entry.lastCheckinDate === today ? '#146445' : 'none'} />
+                             fill={entry.lastCheckinDate === today ? '#4B5694' : 'none'} />
                         <span className="font-display text-sm text-ink/70">{entry.totalCheckins}</span>
                       </div>
                     </li>

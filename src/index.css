@@ -24,8 +24,8 @@
 @layer base {
   html {
     font-family: 'DM Sans', system-ui, sans-serif;
-    color: #1A1A1A;
-    background-color: #DCD5D3;
+    color: #111844;
+    background-color: #EAE0CF;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -36,7 +36,7 @@
 
 /* Legacy hook kept for any references */
 .paper-bg {
-  background-color: #DCD5D3;
+  background-color: #EAE0CF;
 }
 
 /* ─────────────────────────────────────────────
@@ -53,15 +53,15 @@
            bg-navy text-ivory font-body text-base font-bold
            uppercase tracking-wider rounded-full
            min-h-[44px] cursor-pointer select-none;
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.22), 0 2px 12px rgba(1,0,151,0.18);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.22), 0 2px 12px rgba(17,24,68,0.20);
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
   }
   .btn-retro:hover {
-    filter: brightness(1.12);
+    filter: brightness(1.18);
   }
   .btn-retro:active {
     transform: scale(0.95) translateY(1px);
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.22), 0 1px 4px rgba(1,0,151,0.15);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.22), 0 1px 4px rgba(17,24,68,0.18);
   }
 
   /* XL pill button — the one primary CTA per screen */
@@ -75,13 +75,13 @@
            bg-emerald text-ivory font-body text-base
            uppercase tracking-wider rounded-full
            min-h-[44px] cursor-pointer select-none;
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.18), 0 2px 12px rgba(20,100,69,0.18);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.18), 0 2px 12px rgba(75,86,148,0.24);
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
   }
-  .btn-secondary:hover { filter: brightness(1.10); }
+  .btn-secondary:hover { filter: brightness(1.12); }
   .btn-secondary:active {
     transform: scale(0.95) translateY(1px);
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.18), 0 1px 4px rgba(20,100,69,0.15);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.18), 0 1px 4px rgba(75,86,148,0.20);
   }
 
   .btn-danger {
@@ -107,7 +107,7 @@
 
   .card-retro {
     @apply bg-ivory rounded-2xl p-4;
-    box-shadow: 0 4px 20px rgba(26,26,26,0.08);
+    box-shadow: 0 4px 20px rgba(17,24,68,0.10);
   }
 
   .card-wobbly {
@@ -169,8 +169,8 @@
 
   .card-light {
     @apply bg-ivory rounded-2xl p-4;
-    box-shadow: 0 4px 20px rgba(26,26,26,0.07);
-    border: 1px solid rgba(26, 26, 26, 0.05);
+    box-shadow: 0 4px 20px rgba(17,24,68,0.10);
+    border: 1px solid rgba(17, 24, 68, 0.06);
   }
 
   .input-light {
@@ -178,10 +178,10 @@
            font-body text-ink placeholder-ink/30 rounded-2xl
            focus:outline-none transition-colors duration-150
            min-h-[44px];
-    border: 1px solid rgba(26, 26, 26, 0.12);
+    border: 1px solid rgba(17, 24, 68, 0.14);
   }
   .input-light:focus {
-    border-color: rgba(1, 0, 151, 0.45);
+    border-color: rgba(17, 24, 68, 0.45);
   }
 
   .label-light {
