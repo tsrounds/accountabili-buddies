@@ -172,13 +172,13 @@ export default function LoginPage() {
   }
 
   const stepLabel = {
-    phone: 'ENLISTMENT',
+    phone: 'SIGN IN',
     otp:   'VERIFICATION',
-    name:  'IDENTIFICATION',
+    name:  'QUICK QUESTION',
   }[step.name]
 
   return (
-    <div className="bg-dark min-h-screen flex flex-col font-body">
+    <div className="bg-navy min-h-screen flex flex-col font-body">
 
       {/* ── DARK HERO ZONE ── */}
       <div className="flex-1 flex flex-col items-center justify-end px-5 pb-8 pt-12">
@@ -186,7 +186,7 @@ export default function LoginPage() {
         <p className="mt-4 font-display text-cream/40 text-xs uppercase tracking-[0.25em] animate-slide-up-1">
           {stepLabel}
         </p>
-        <h1 className="font-display text-cream text-5xl uppercase tracking-wide text-center leading-none mt-1 animate-slide-up-2">
+        <h1 className="font-display text-cream text-4xl uppercase tracking-normal text-center leading-tight mt-1 animate-slide-up-2">
           Accountabili-<br />Buddies
         </h1>
       </div>
@@ -247,12 +247,12 @@ export default function LoginPage() {
           {step.name === 'otp' && (
             <form onSubmit={handleOtpSubmit} className="space-y-4 animate-slide-up">
               <p className="font-body text-dark/60 text-sm text-center leading-relaxed">
-                Code dispatched to{' '}
+                Code sent to{' '}
                 <span className="text-dark font-semibold">{step.phone}</span>
               </p>
               <div>
                 <label className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-2 text-center">
-                  Clearance Code
+                  Your Code
                 </label>
                 <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, i) => (
@@ -297,7 +297,7 @@ export default function LoginPage() {
           {step.name === 'name' && (
             <form onSubmit={handleNameSubmit} className="space-y-4 animate-slide-up">
               <p className="font-body text-dark/60 text-sm leading-relaxed text-center">
-                What should we call you, recruit?
+                What should we call you?
               </p>
               <div>
                 <label htmlFor="firstName" className="block font-body text-xs text-dark/60 uppercase tracking-wider mb-1.5">
@@ -323,8 +323,8 @@ export default function LoginPage() {
                 disabled={submitting || !nameInput.trim()}
                 className="btn-retro-xl w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Reporting for duty…' : (
-                  <>Report for Duty <ArrowRight size={16} aria-hidden="true" /></>
+                {submitting ? 'Joining…' : (
+                  <>I'm In <ArrowRight size={16} aria-hidden="true" /></>
                 )}
               </button>
             </form>

@@ -8,32 +8,45 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // New palette
-        dark: '#1F211F',
-        neon: '#E7F53C',
-        cream: '#FCF1E4',
-        teal: '#00CCC0',
-        'dark-teal': '#1A3C3F',
-        purple: '#7885FF',
-        'light-purple': '#B7C8E9',
-        // Legacy aliases — same names, new values so existing pages update automatically
-        slate: '#FCF1E4',
-        mustard: '#E7F53C',
-        'retro-red': '#FF6B6B',
-        olive: '#00CCC0',
+        // ── Design system (semantic names) — blue + cream palette ──
+        dust: '#EAE0CF',     // app background / default surface (cream)
+        navy: '#111844',     // primary buttons, hero, active states, key CTAs
+        ivory: '#FAF6EA',    // cards, inputs, elevated surfaces + light text on navy
+        frost: '#7288AE',    // progress bars, highlights, streaks (slate)
+        emerald: '#4B5694',  // secondary actions, badges, positive feedback (indigo)
+        flame: '#7288AE',    // streak accent (slate, on-palette)
+        ink: '#111844',      // primary text on light surfaces (deep navy)
+        muted: '#5C6488',    // secondary / muted labels
+
+        // ── Legacy aliases — remapped to the new palette by role so the
+        //    existing pages adopt the theme automatically. ──
+        dark: '#111844',         // near-black surface → deep navy (text + dark surface)
+        'dark-teal': '#111844',  // dark card / floating nav surface → deep navy
+        cream: '#FAF6EA',        // light text on dark + elevated surface → near-white
+        neon: '#4B5694',         // pop accent → indigo (reads on cream + navy)
+        teal: '#7288AE',         // small icon accent → slate
+        'light-purple': '#EAE0CF', // light content zone → cream
+        purple: '#111844',
+        slate: '#FAF6EA',
+        mustard: '#4B5694',
+        olive: '#4B5694',
+        'retro-red': '#D7263D',  // errors / danger (kept distinct)
       },
       fontFamily: {
+        // Sauce Tomato (doc display face) is not bundled in this repo; Tholoes is
+        // kept as the characterful display font. Body is DM Sans per the doc.
         display: ['Tholoes', 'Impact', '"Arial Black"', 'sans-serif'],
-        body: ['"Bebas Neue"', 'Impact', 'sans-serif'],
+        body: ['"DM Sans"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        retro: '0 2px 16px rgba(0,0,0,0.4)',
-        'retro-sm': '0 1px 8px rgba(0,0,0,0.3)',
-        card: '0 2px 16px rgba(0,0,0,0.4)',
-        glow: '0 0 20px rgba(231,245,60,0.25)',
-        clay: 'inset 0 -3px 0 rgba(0,0,0,0.25), 0 2px 12px rgba(0,0,0,0.3)',
-        'clay-sm': 'inset 0 -2px 0 rgba(0,0,0,0.2), 0 1px 8px rgba(0,0,0,0.25)',
-        float: '0 8px 32px rgba(0,0,0,0.4)',
+        // Soft, warm-toned shadows (no pure black) per the doc.
+        retro: '0 2px 16px rgba(26,26,26,0.10)',
+        'retro-sm': '0 1px 8px rgba(26,26,26,0.08)',
+        card: '0 4px 20px rgba(26,26,26,0.08)',
+        glow: '0 0 24px rgba(114,136,174,0.50)',
+        clay: 'inset 0 -3px 0 rgba(0,0,0,0.18), 0 2px 12px rgba(17,24,68,0.12)',
+        'clay-sm': 'inset 0 -2px 0 rgba(0,0,0,0.15), 0 1px 8px rgba(17,24,68,0.10)',
+        float: '0 8px 32px rgba(17,24,68,0.22)',
       },
       borderRadius: {
         '4xl': '2rem',
@@ -65,6 +78,13 @@ const config: Config = {
         'fade-in': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'confetti-fall': {
+          '0%': { transform: 'translateY(-10vh) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'translateY(110vh) rotate(720deg)', opacity: '0' },
         },
       },
       animation: {

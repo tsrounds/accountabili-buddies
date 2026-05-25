@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
 export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none pb-4 px-4">
-      <ul className="pointer-events-auto flex items-stretch max-w-lg mx-auto bg-dark-teal rounded-full shadow-float border border-cream/10 px-2">
+      <ul className="pointer-events-auto flex items-stretch max-w-lg mx-auto bg-navy rounded-full shadow-float border border-ivory/10 px-2">
         {NAV_ITEMS.map(({ to, label, Icon, end }) => (
           <li key={to} className="flex-1">
             <NavLink
@@ -29,7 +29,7 @@ export default function BottomNav() {
                 [
                   'relative flex flex-col items-center justify-center gap-1 py-3 w-full min-h-[56px] rounded-full',
                   'transition-colors duration-150',
-                  isActive ? 'text-dark' : 'text-cream/50 hover:text-cream/80',
+                  isActive ? 'text-ivory' : 'text-ivory/50 hover:text-ivory/80',
                 ].join(' ')
               }
             >
@@ -37,7 +37,7 @@ export default function BottomNav() {
                 <>
                   {/* Active neon pill indicator */}
                   {isActive && (
-                    <span className="absolute inset-1 rounded-full bg-neon animate-fade-in" aria-hidden="true" />
+                    <span className="absolute inset-1 rounded-full bg-emerald animate-fade-in" aria-hidden="true" />
                   )}
                   <Icon
                     size={20}

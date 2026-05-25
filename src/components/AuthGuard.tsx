@@ -8,7 +8,7 @@ export default function AuthGuard() {
   if (loading) {
     return (
       <div className="paper-bg min-h-screen flex items-center justify-center">
-        <p className="font-display text-slate/50 uppercase tracking-widest text-sm animate-pulse">
+        <p className="font-display text-ink/50 uppercase tracking-widest text-sm animate-pulse">
           Authenticating...
         </p>
       </div>
