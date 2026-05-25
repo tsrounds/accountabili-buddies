@@ -2,7 +2,12 @@
 description: Start the Accountabili-Buddies Vite dev server for local preview
 ---
 
-# Run Dev Server
+# Preview
+
+**Production / branch previews**: https://accountabili-buddies.vercel.app
+Every pushed branch gets an automatic Vercel preview URL visible in the Vercel dashboard.
+
+# Run Dev Server (local only)
 
 Start the dev server in the background and verify it's ready:
 
