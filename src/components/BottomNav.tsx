@@ -18,7 +18,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none pb-4 px-4">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-4 pt-2"
+      style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+    >
       <ul className="pointer-events-auto flex items-stretch max-w-lg mx-auto bg-navy rounded-full shadow-float border border-ivory/10 px-2">
         {NAV_ITEMS.map(({ to, label, Icon, end }) => (
           <li key={to} className="flex-1">
