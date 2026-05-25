@@ -186,7 +186,7 @@ export default function LoginPage() {
         <p className="mt-4 font-display text-cream/40 text-xs uppercase tracking-[0.25em] animate-slide-up-1">
           {stepLabel}
         </p>
-        <h1 className="font-display text-cream text-5xl uppercase tracking-wide text-center leading-none mt-1 animate-slide-up-2">
+        <h1 className="font-display text-cream text-4xl uppercase tracking-normal text-center leading-tight mt-1 animate-slide-up-2">
           Accountabili-<br />Buddies
         </h1>
       </div>
