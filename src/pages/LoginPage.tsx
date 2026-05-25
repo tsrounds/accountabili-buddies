@@ -181,7 +181,10 @@ export default function LoginPage() {
     <div className="bg-navy min-h-screen flex flex-col font-body">
 
       {/* ── DARK HERO ZONE ── */}
-      <div className="flex-1 flex flex-col items-center justify-end px-5 pb-8 pt-12">
+      <div
+        className="flex-1 flex flex-col items-center justify-end px-5 pb-8"
+        style={{ paddingTop: 'max(3rem, calc(env(safe-area-inset-top) + 1.5rem))' }}
+      >
         <MascotZone mood="idle" />
         <p className="mt-4 font-display text-cream/40 text-xs uppercase tracking-[0.25em] animate-slide-up-1">
           {stepLabel}
