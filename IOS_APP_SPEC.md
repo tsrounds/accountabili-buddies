@@ -54,23 +54,11 @@ This is a **dedicated Firebase project for the iOS app**, separate from the web 
 **Auth domain:** `accountabili-buddies.firebaseapp.com`  
 **Storage bucket:** `accountabili-buddies.firebasestorage.app`  
 **GCM Sender ID:** `198599137573`  
-**iOS App ID:** `1:198599137573:ios:f24e457144277be3b9e2cc`  
+**iOS App ID:** `1:198599137573:ios:05b7e5753289fb17b9e2cc`  
 **API Key:** `AIzaSyBKZ9HhkfGnuEHCOEmYY573pP_dDGb4t54`  
+**Bundle ID:** `com.tsrounds.accountabilibuddies`  
 
-The `GoogleService-Info.plist` has been provided. Place it at the project root. `@react-native-firebase` reads it automatically after `expo prebuild`. **Do not commit this file to git** — add it to `.gitignore`.
-
-### Bundle ID Fix Required
-
-The plist currently has `BUNDLE_ID: Accountabili-buddies`. This must be updated to a proper reverse-domain format before App Store submission.
-
-**Correct bundle ID:** `com.tsrounds.accountabilibuddies`
-
-Steps to fix:
-1. Firebase Console → Project `accountabili-buddies` → Project Settings → Your apps → iOS app → edit bundle ID to `com.tsrounds.accountabilibuddies`
-2. Re-download the updated `GoogleService-Info.plist`
-3. Use `com.tsrounds.accountabilibuddies` in `app.json` under `ios.bundleIdentifier`
-
-Until the bundle ID is fixed in Firebase Console, use the plist as-is for local development but plan the fix before any TestFlight build.
+The `GoogleService-Info.plist` has been provided and is ready to use. Place it at the project root. `@react-native-firebase` reads it automatically after `expo prebuild`. **Do not commit this file to git** — add `GoogleService-Info.plist` to `.gitignore`.
 
 ---
 
