@@ -12,6 +12,7 @@ import DossierPage from '@/pages/DossierPage'
 import CheckInPage from '@/pages/CheckInPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import DispatchPage from '@/pages/DispatchPage'
+import MascotPreview from '@/pages/MascotPreview'
 
 export default function App() {
   return (
@@ -19,6 +20,9 @@ export default function App() {
       <Routes>
         {/* Auth — no Layout, no guard */}
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Mascot preview — unguarded so design can be reviewed without login */}
+        <Route path="/mascot-preview" element={<MascotPreview />} />
 
         {/* All app routes — guarded, then wrapped in Layout */}
         <Route element={<AuthGuard />}>
