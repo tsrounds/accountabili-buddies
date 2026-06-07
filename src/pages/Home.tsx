@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import { fillTemplate, pickRandom, reminderTemplates } from '@/templates/roastTemplates'
 import MascotZone from '@/components/MascotZone'
+import Mascot from '@/components/Mascot'
 import ZoneDivider from '@/components/ZoneDivider'
 import type { ComponentProps } from 'react'
 
@@ -163,6 +164,7 @@ export default function Home() {
       {/* ── DARK HERO ZONE ── */}
       <div className="zone-hero pb-8 flex flex-col items-center gap-2">
         <MascotZone mood={mascotMood} />
+        <Mascot size={160} />
 
         {/* Reminder nudge — inline in hero, not a separate banner */}
         {reminderMessage && !reminderDismissed && (
