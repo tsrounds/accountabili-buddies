@@ -6,14 +6,7 @@ import CreateMission from './pages/CreateMission'
 import Join from './pages/Join'
 import Dashboard from './pages/Dashboard'
 import ChallengeDetail from './pages/ChallengeDetail'
-
-function Placeholder({ name }: { name: string }) {
-  return (
-    <main className="grid min-h-dvh place-items-center">
-      <h1 className="font-display text-4xl text-space">{name}</h1>
-    </main>
-  )
-}
+import Dispatch from './pages/Dispatch'
 
 export default function App() {
   return (
@@ -40,7 +33,7 @@ export default function App() {
           path="/dispatch"
           element={
             <AuthGuard>
-              <Placeholder name="DISPATCH" />
+              <Dispatch />
             </AuthGuard>
           }
         />
