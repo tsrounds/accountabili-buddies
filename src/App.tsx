@@ -1,4 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import AuthGuard from './components/AuthGuard'
+import Login from './pages/Login'
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -10,13 +13,50 @@ function Placeholder({ name }: { name: string }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Placeholder name="LOGIN" />} />
-      <Route path="/" element={<Placeholder name="DASHBOARD" />} />
-      <Route path="/challenge/:id" element={<Placeholder name="MISSION" />} />
-      <Route path="/dispatch" element={<Placeholder name="DISPATCH" />} />
-      <Route path="/create" element={<Placeholder name="NEW MISSION" />} />
-      <Route path="/join/:code" element={<Placeholder name="JOIN" />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <AuthGuard>
+              <Placeholder name="DASHBOARD" />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/challenge/:id"
+          element={
+            <AuthGuard>
+              <Placeholder name="MISSION" />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/dispatch"
+          element={
+            <AuthGuard>
+              <Placeholder name="DISPATCH" />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/create"
+          element={
+            <AuthGuard adminOnly>
+              <Placeholder name="NEW MISSION" />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/join/:code"
+          element={
+            <AuthGuard>
+              <Placeholder name="JOIN" />
+            </AuthGuard>
+          }
+        />
+      </Routes>
+    </AuthProvider>
   )
 }
