@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import AuthGuard from './components/AuthGuard'
 import Login from './pages/Login'
+import CreateMission from './pages/CreateMission'
+import Join from './pages/Join'
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -44,7 +46,7 @@ export default function App() {
           path="/create"
           element={
             <AuthGuard adminOnly>
-              <Placeholder name="NEW MISSION" />
+              <CreateMission />
             </AuthGuard>
           }
         />
@@ -52,7 +54,7 @@ export default function App() {
           path="/join/:code"
           element={
             <AuthGuard>
-              <Placeholder name="JOIN" />
+              <Join />
             </AuthGuard>
           }
         />
