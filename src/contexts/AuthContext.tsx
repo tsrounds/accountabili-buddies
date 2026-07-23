@@ -6,102 +6,152 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
-import { doc, getDoc, type Timestamp } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
-import { saveLocalProfile, loadLocalProfile, clearLocalProfile } from '@/lib/localCache'
+import {
+  isSignInWithEmailLink,
+  onAuthStateChanged,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+  signOut,
+  type User,
+} from 'firebase/auth'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
+import { ADMIN_EMAIL } from '../lib/constants'
+import type { UserProfile } from '../lib/types'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface AbUser {
-  uid: string
-  firstName: string
-  phone: string
-  createdAt?: Timestamp
-  avatarUrl: string | null
-  deviceIds?: string[]
-}
+const PENDING_EMAIL_KEY = 'ab_pendingEmail'
+const PENDING_NAME_KEY = 'ab_pendingFirstName'
 
 interface AuthContextValue {
-  currentUser: AbUser | null
+  user: User | null
+  profile: UserProfile | null
   loading: boolean
-  signOut: () => Promise<void>
-  refreshUser: () => Promise<void>
+  /** True while a magic link in the URL is being exchanged for a session. */
+  completingSignIn: boolean
+  /** Set when the link was opened on a device without the stored email. */
+  needsEmailConfirm: boolean
+  sendLink: (email: string, firstName: string) => Promise<void>
+  confirmEmailAndSignIn: (email: string) => Promise<void>
+  signOutUser: () => Promise<void>
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Context
-// ─────────────────────────────────────────────────────────────────────────────
+const AuthContext = createContext<AuthContextValue | null>(null)
 
-export const AuthContext = createContext<AuthContextValue | null>(null)
+async function ensureUserDoc(user: User): Promise<UserProfile> {
+  const ref = doc(db, 'ab_users', user.uid)
+  const snap = await getDoc(ref)
+  if (snap.exists()) return snap.data() as UserProfile
 
-export function useAuthContext() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuthContext must be inside AuthProvider')
-  return ctx
+  const email = user.email ?? ''
+  const firstName =
+    localStorage.getItem(PENDING_NAME_KEY) || email.split('@')[0] || 'Buddy'
+  const data = {
+    uid: user.uid,
+    email,
+    firstName,
+    isAdmin: email.toLowerCase() === ADMIN_EMAIL,
+    createdAt: serverTimestamp(),
+  }
+  await setDoc(ref, data)
+  localStorage.removeItem(PENDING_NAME_KEY)
+  return (await getDoc(ref)).data() as UserProfile
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Provider
-// ─────────────────────────────────────────────────────────────────────────────
+// Module-level so React 18 StrictMode's double-mounted effect can't consume
+// the one-time-use sign-in link twice.
+let linkExchangeStarted = false
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const cached = loadLocalProfile()
-  const [currentUser, setCurrentUser] = useState<AbUser | null>(
-    cached ? { ...cached, avatarUrl: null } : null
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [completingSignIn, setCompletingSignIn] = useState(() =>
+    isSignInWithEmailLink(auth, window.location.href),
   )
-  // skip spinner if we have a cached profile — Firebase will verify silently
-  const [loading, setLoading] = useState(!cached)
+  const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false)
 
-  const refreshUser = useCallback(async () => {
-    const firebaseUser = auth.currentUser
-    if (!firebaseUser) return
-    const snap = await getDoc(doc(db, 'ab_users', firebaseUser.uid))
-    if (snap.exists()) {
-      setCurrentUser(snap.data() as AbUser)
+  const finishLink = useCallback(async (email: string) => {
+    try {
+      await signInWithEmailLink(auth, email, window.location.href)
+      localStorage.removeItem(PENDING_EMAIL_KEY)
+      setNeedsEmailConfirm(false)
+      // Strip the oobCode etc. from the URL.
+      window.history.replaceState(null, '', window.location.pathname)
+    } finally {
+      setCompletingSignIn(false)
     }
   }, [])
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        clearLocalProfile()
-        setCurrentUser(null)
-        setLoading(false)
-        return
-      }
-      // Firebase user exists — fetch the Firestore profile doc
-      try {
-        const snap = await getDoc(doc(db, 'ab_users', firebaseUser.uid))
-        if (snap.exists()) {
-          const profile = snap.data() as AbUser
-          setCurrentUser(profile)
-          saveLocalProfile(profile)
-        } else {
-          // New user — profile not yet created (LoginPage will handle name entry)
-          setCurrentUser(null)
-        }
-      } catch (err) {
-        console.error('[AuthContext] Firestore fetch error:', err)
-        // Keep warm-start value so app stays usable during transient network errors
-      } finally {
-        setLoading(false)
-      }
-    })
+    if (!isSignInWithEmailLink(auth, window.location.href)) return
+    if (linkExchangeStarted) return
+    linkExchangeStarted = true
+    const stored = localStorage.getItem(PENDING_EMAIL_KEY)
+    if (stored) {
+      void finishLink(stored).catch(() => setCompletingSignIn(false))
+    } else {
+      // Link opened on a different device — ask for the email once.
+      setNeedsEmailConfirm(true)
+      setCompletingSignIn(false)
+    }
+  }, [finishLink])
 
-    return unsubscribe
+  useEffect(() => {
+    return onAuthStateChanged(auth, async (u) => {
+      setUser(u)
+      if (u) {
+        try {
+          setProfile(await ensureUserDoc(u))
+        } catch (err) {
+          console.error('Failed to load profile', err)
+          setProfile(null)
+        }
+      } else {
+        setProfile(null)
+      }
+      setLoading(false)
+    })
   }, [])
 
-  async function signOut() {
-    clearLocalProfile()
-    await firebaseSignOut(auth)
-  }
+  const sendLink = useCallback(async (email: string, firstName: string) => {
+    localStorage.setItem(PENDING_EMAIL_KEY, email)
+    localStorage.setItem(PENDING_NAME_KEY, firstName)
+    await sendSignInLinkToEmail(auth, email, {
+      url: `${window.location.origin}/login`,
+      handleCodeInApp: true,
+    })
+  }, [])
+
+  const confirmEmailAndSignIn = useCallback(
+    async (email: string) => {
+      setCompletingSignIn(true)
+      await finishLink(email)
+    },
+    [finishLink],
+  )
+
+  const signOutUser = useCallback(() => signOut(auth), [])
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, signOut, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        loading,
+        completingSignIn,
+        needsEmailConfirm,
+        sendLink,
+        confirmEmailAndSignIn,
+        signOutUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  return ctx
 }

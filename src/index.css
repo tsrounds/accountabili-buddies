@@ -1,238 +1,91 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* ─────────────────────────────────────────────
-   Custom fonts
-   - Tholoes: characterful display face (headers). Sauce Tomato from the
-     design doc is not bundled in this repo, so Tholoes stands in for it.
-   - DM Sans: body / subtext, loaded via Google Fonts <link> in index.html.
-   ───────────────────────────────────────────── */
+@theme {
+  /* ── Brand palette (strict) ─────────────────────────────── */
+  --color-lava: #780000; /* deep accent — headers, intense moments */
+  --color-brick: #c1121f; /* shame, warnings, roast highlights */
+  --color-space: #003049; /* primary dark — text, nav, structure */
+  --color-papaya: #fdf0d5; /* warm paper base */
+  --color-steel: #669bbc; /* interactive, links, success */
 
-@font-face {
-  font-family: 'Tholoes';
-  src: url('/fonts/Tholoes/tholoesdemo-jexel.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+  /* ── Type ───────────────────────────────────────────────── */
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-body: 'Atkinson Hyperlegible', 'Helvetica Neue', sans-serif;
+
+  --shadow-card: 0 2px 0 0 rgb(0 48 73 / 0.14);
+  --shadow-lifted: 0 10px 30px -12px rgb(0 48 73 / 0.35);
 }
 
-/* ─────────────────────────────────────────────
-   Base typography — light theme (Dust Grey surface, ink text)
-   ───────────────────────────────────────────── */
-
-@layer base {
-  html {
-    font-family: 'DM Sans', system-ui, sans-serif;
-    color: #111844;
-    background-color: #EAE0CF;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  h1, h2, h3, h4 {
-    font-family: 'Tholoes', Impact, 'Arial Black', sans-serif;
-  }
+:root {
+  color-scheme: light;
 }
 
-/* Legacy hook kept for any references */
-.paper-bg {
-  background-color: #EAE0CF;
+html,
+body {
+  height: 100%;
 }
 
-/* ─────────────────────────────────────────────
-   Reusable component classes
-   ───────────────────────────────────────────── */
-
-@layer components {
-
-  /* ── Buttons ── */
-
-  /* Primary CTA — Navy Electric */
-  .btn-retro {
-    @apply inline-flex items-center justify-center px-7 py-3.5
-           bg-navy text-ivory font-body text-base font-bold
-           uppercase tracking-wider rounded-full
-           min-h-[44px] cursor-pointer select-none;
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.22), 0 2px 12px rgba(17,24,68,0.20);
-    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
-  }
-  .btn-retro:hover {
-    filter: brightness(1.18);
-  }
-  .btn-retro:active {
-    transform: scale(0.95) translateY(1px);
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.22), 0 1px 4px rgba(17,24,68,0.18);
-  }
-
-  /* XL pill button — the one primary CTA per screen */
-  .btn-retro-xl {
-    @apply btn-retro py-5 text-xl tracking-widest;
-  }
-
-  /* Secondary action — Dark Emerald */
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5
-           bg-emerald text-ivory font-body text-base
-           uppercase tracking-wider rounded-full
-           min-h-[44px] cursor-pointer select-none;
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.18), 0 2px 12px rgba(75,86,148,0.24);
-    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
-  }
-  .btn-secondary:hover { filter: brightness(1.12); }
-  .btn-secondary:active {
-    transform: scale(0.95) translateY(1px);
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.18), 0 1px 4px rgba(75,86,148,0.20);
-  }
-
-  .btn-danger {
-    @apply btn-retro bg-retro-red text-ivory;
-  }
-
-  .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5
-           bg-transparent text-navy font-body text-base uppercase tracking-wider
-           rounded-full min-h-[44px] cursor-pointer select-none
-           border-2 border-navy/25;
-    box-shadow: none;
-    transition: transform 0.15s ease-out, border-color 0.15s ease-out, background-color 0.15s ease-out;
-  }
-  .btn-outline:hover {
-    @apply border-navy/50 bg-navy/5;
-  }
-  .btn-outline:active {
-    transform: scale(0.95);
-  }
-
-  /* ── Cards ── */
-
-  .card-retro {
-    @apply bg-ivory rounded-2xl p-4;
-    box-shadow: 0 4px 20px rgba(17,24,68,0.10);
-  }
-
-  .card-wobbly {
-    @apply card-retro;
-    transform: rotate(-1deg);
-    transition: transform 0.15s ease-out;
-  }
-  .card-wobbly:hover,
-  .card-wobbly:focus-within {
-    transform: rotate(0deg);
-  }
-
-  /* ── Layout zones ── */
-
-  /* Hero zone — Navy Electric dark surface, owns its horizontal padding */
-  .zone-hero {
-    @apply bg-navy w-full px-5 pt-6 pb-0;
-  }
-
-  .zone-hero-compact {
-    @apply bg-navy w-full px-5 pt-4 pb-0;
-  }
-
-  /* Light content zone — Dust Grey, floats above the hero */
-  .zone-content {
-    @apply bg-dust w-full px-5 pt-6;
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
-    border-radius: 2rem 2rem 0 0;
-  }
-
-  .zone-divider {
-    @apply block w-full;
-    margin-top: -1px;
-  }
-
-  /* ── Forms ── */
-
-  .input-retro {
-    @apply w-full border border-ink/15 bg-ivory px-4 py-3
-           font-body text-ink placeholder-ink/30 rounded-2xl
-           focus:outline-none focus:border-navy transition-colors duration-150
-           min-h-[44px];
-  }
-
-  .label-retro {
-    @apply block font-body text-xs text-ink/60 uppercase tracking-wider mb-1.5;
-  }
-
-  .badge-retro {
-    @apply inline-block px-3 py-1 rounded-full bg-navy/10
-           font-body text-xs uppercase tracking-widest text-navy;
-  }
-
-  .badge-retro-dark {
-    @apply inline-block px-3 py-1 rounded-full bg-ivory/10
-           font-body text-xs uppercase tracking-widest text-ivory/70;
-  }
-
-  /* ── Light-zone variants (content on Dust Grey) ── */
-
-  .card-light {
-    @apply bg-ivory rounded-2xl p-4;
-    box-shadow: 0 4px 20px rgba(17,24,68,0.10);
-    border: 1px solid rgba(17, 24, 68, 0.06);
-  }
-
-  .input-light {
-    @apply w-full bg-ivory px-4 py-3
-           font-body text-ink placeholder-ink/30 rounded-2xl
-           focus:outline-none transition-colors duration-150
-           min-h-[44px];
-    border: 1px solid rgba(17, 24, 68, 0.14);
-  }
-  .input-light:focus {
-    border-color: rgba(17, 24, 68, 0.45);
-  }
-
-  .label-light {
-    @apply block font-body text-xs text-ink/50 uppercase tracking-wider mb-1.5;
-  }
-
-  /* ── Skeletons — shimmer, never spinners ── */
-
-  .skeleton {
-    @apply relative overflow-hidden bg-ink/10 rounded-xl;
-  }
-  .skeleton::after {
-    content: '';
-    @apply absolute inset-0;
-    transform: translateX(-100%);
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.55),
-      transparent
-    );
-    animation: shimmer 1.4s infinite;
-  }
+body {
+  @apply bg-papaya text-space font-body antialiased;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ─────────────────────────────────────────────
-   Reduced motion — disable custom animations
-   ───────────────────────────────────────────── */
+/* Display face is all-caps by nature — give it breathing room */
+.font-display {
+  letter-spacing: 0.015em;
+}
+
+/* iOS safe areas */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Elements that JS animates in start hidden — but never when the user
+   prefers reduced motion, and never without JS. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-animate] {
+    opacity: 0;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-slide-up,
-  .animate-slide-up-1,
-  .animate-slide-up-2,
-  .animate-slide-up-3,
-  .animate-slide-up-4,
-  .animate-spring-pop,
-  .animate-check-pop,
-  .animate-wiggle,
-  .animate-fade-in,
-  .card-wobbly {
-    animation: none !important;
-    transform: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
+}
 
-  .skeleton::after { animation: none !important; }
+/* Focus rings: visible, never animated */
+:focus-visible {
+  outline: 3px solid var(--color-steel);
+  outline-offset: 2px;
+}
 
-  .btn-retro:active,
-  .btn-secondary:active,
-  .btn-outline:active {
-    transform: none !important;
+button {
+  touch-action: manipulation;
+}
+
+/* Universal press feedback — cheap, consistent, and it never fights the
+   big anime.js moments (those buttons are disabled mid-animation). */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled),
+  a[class*='rounded'] {
+    transition: transform 150ms ease-out;
   }
+  button:not(:disabled):active,
+  a[class*='rounded']:active {
+    transform: scale(0.97);
+  }
+}
+
+::selection {
+  background: var(--color-steel);
+  color: var(--color-space);
 }

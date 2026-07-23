@@ -1,24 +1,19 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+import { Navigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import LoadingScreen from './LoadingScreen'
 
-export default function AuthGuard() {
-  const { currentUser, loading } = useAuth()
-  const location = useLocation()
+export default function AuthGuard({
+  children,
+  adminOnly = false,
+}: {
+  children: ReactNode
+  adminOnly?: boolean
+}) {
+  const { user, profile, loading, completingSignIn } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="paper-bg min-h-screen flex items-center justify-center">
-        <p className="font-display text-ink/50 uppercase tracking-widest text-sm animate-pulse">
-          Authenticating...
-        </p>
-      </div>
-    )
-  }
-
-  if (!currentUser) {
-    // Store where they were trying to go so we can redirect back after login
-    return <Navigate to="/login" state={{ from: location }} replace />
-  }
-
-  return <Outlet />
+  if (loading || completingSignIn) return <LoadingScreen />
+  if (!user) return <Navigate to="/login" replace />
+  if (adminOnly && !profile?.isAdmin) return <Navigate to="/" replace />
+  return <>{children}</>
 }

@@ -1,24 +1,17 @@
 {
   "name": "Accountabili-Buddies",
-  "short_name": "AccBuddies",
-  "description": "Stay accountable with your buddies through fun challenges.",
-  "theme_color": "#010097",
-  "background_color": "#DCD5D3",
-  "display": "standalone",
+  "short_name": "Buddies",
+  "description": "Your friends are watching. The mascot is judging. Check in or get wrecked.",
   "start_url": "/",
-  "scope": "/",
-  "orientation": "portrait",
+  "display": "standalone",
+  "background_color": "#FDF0D5",
+  "theme_color": "#003049",
   "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     {
-      "src": "/icons/icon-192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512.svg",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
