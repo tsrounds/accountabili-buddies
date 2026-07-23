@@ -4,6 +4,8 @@ import AuthGuard from './components/AuthGuard'
 import Login from './pages/Login'
 import CreateMission from './pages/CreateMission'
 import Join from './pages/Join'
+import Dashboard from './pages/Dashboard'
+import ChallengeDetail from './pages/ChallengeDetail'
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -22,7 +24,7 @@ export default function App() {
           path="/"
           element={
             <AuthGuard>
-              <Placeholder name="DASHBOARD" />
+              <Dashboard />
             </AuthGuard>
           }
         />
@@ -30,7 +32,7 @@ export default function App() {
           path="/challenge/:id"
           element={
             <AuthGuard>
-              <Placeholder name="MISSION" />
+              <ChallengeDetail />
             </AuthGuard>
           }
         />
