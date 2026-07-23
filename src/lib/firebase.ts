@@ -1,19 +1,20 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Firebase — bracket-anything project
+// ─────────────────────────────────────────────────────────────────
+// Firebase — shared `bracket-anything` project.
 //
-// Firestore collection naming convention (ab_ prefix for all collections):
-//   ab_users        — user profiles: { uid, firstName, phone, createdAt, avatarUrl }
-//   ab_challenges   — challenges + subcollections: members, checkins, leaderboard, dossiers
-//   ab_invites      — 6-char alphanumeric invite codes → { challengeId }
-//   ab_dispatches   — weekly dispatch data: { challengeId, weekNum, data }
-//   ab_notifications — sent SMS log (for rate-limiting and debugging)
-// ─────────────────────────────────────────────────────────────────────────────
+// Firestore namespace (ab_ prefix on every collection):
+//   ab_users                                  — user profiles
+//   ab_challenges/{id}                        — challenges
+//   ab_challenges/{id}/members/{uid}          — per-member goal + frequency
+//   ab_challenges/{id}/checkins/{uid}_{date}  — daily check-ins
+//   ab_challenges/{id}/leaderboard/{uid}      — running totals
+//   ab_challenges/{id}/roasts/{date}          — cached daily AI roasts
+//   ab_dispatches/{challengeId}_{weekId}      — weekly dispatch docs
+//   ab_invites/{code}                         — 6-char invite codes
+// ─────────────────────────────────────────────────────────────────
 
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
-import { getAnalytics } from 'firebase/analytics'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyChMQGS-CLl9vp-SysXFFbXIdWlgK_kCqU',
@@ -29,7 +30,5 @@ const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
 export const db = getFirestore(app)
-export const storage = getStorage(app)
-export const analytics = getAnalytics(app)
 
 export default app
