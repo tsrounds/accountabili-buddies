@@ -11,6 +11,7 @@ import CheckInButton from '../components/CheckInButton'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import RoastsSection from '../components/RoastsSection'
 
 function greeting(): string {
   const h = new Date().getHours()
@@ -194,6 +195,10 @@ export default function Dashboard() {
             <Leaderboard standings={standings} meUid={user?.uid} />
           </section>
 
+          {/* ── Today's roasts ──────────────────────────── */}
+          <div data-animate>
+            <RoastsSection challenge={challenge} standings={standings} />
+          </div>
         </div>
       )}
 
