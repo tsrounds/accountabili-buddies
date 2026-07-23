@@ -28,9 +28,9 @@ deadpan templates.
 2. **Auth → Settings → Authorized domains**: add the hosting domain(s).
 3. Firestore rules: allow authenticated reads/writes on `ab_*` collections.
 
-The Firebase web config is hardcoded in `src/lib/firebase.ts` (shared
-`bracket-anything` project; all collections use the `ab_` prefix). The single
-admin is hardcoded by email in `src/lib/constants.ts`.
+The Firebase web config is hardcoded in `src/lib/firebase.ts`
+(`accountabili-buddies` project; all collections use the `ab_` prefix). The
+single admin is hardcoded by email in `src/lib/constants.ts`.
 
 ## Deploy
 
