@@ -71,3 +71,21 @@ body {
 button {
   touch-action: manipulation;
 }
+
+/* Universal press feedback — cheap, consistent, and it never fights the
+   big anime.js moments (those buttons are disabled mid-animation). */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled),
+  a[class*='rounded'] {
+    transition: transform 150ms ease-out;
+  }
+  button:not(:disabled):active,
+  a[class*='rounded']:active {
+    transform: scale(0.97);
+  }
+}
+
+::selection {
+  background: var(--color-steel);
+  color: var(--color-space);
+}

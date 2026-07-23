@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import { todayKey } from './dates'
@@ -8,9 +8,16 @@ import type { Challenge, MemberStanding, RoastDoc, RoastEntry } from './types'
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined
 export const aiEnabled = Boolean(apiKey)
 
-const anthropic = apiKey
-  ? new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
-  : null
+// SDK loads lazily so it stays out of the main bundle — it's only needed
+// by whoever generates today's roasts first.
+let clientPromise: Promise<Anthropic> | null = null
+function getClient(): Promise<Anthropic> | null {
+  if (!apiKey) return null
+  clientPromise ??= import('@anthropic-ai/sdk').then(
+    (m) => new m.default({ apiKey, dangerouslyAllowBrowser: true }),
+  )
+  return clientPromise
+}
 
 const ROAST_MODEL = 'claude-sonnet-4-6'
 
@@ -62,8 +69,9 @@ async function callDailyRoastApi(
   challengeName: string,
   members: RoastMemberInput[],
 ): Promise<RoastEntry[]> {
-  if (!anthropic) throw new Error('AI disabled')
-  const response = await anthropic.messages.create({
+  const client = await getClient()
+  if (!client) throw new Error('AI disabled')
+  const response = await client.messages.create({
     model: ROAST_MODEL,
     max_tokens: 1000,
     system: ROAST_SYSTEM,
@@ -167,9 +175,10 @@ export async function generateWeeklyRoast(input: {
 }): Promise<string> {
   const fallback = `Another week in "${input.challengeName}" is in the books. ${input.hero} carried the team with a suspicious amount of enthusiasm, while ${input.slacker} treated the check-in button like it owed them money. Everyone else hovered comfortably in the mediocre middle, which the mascot notes is exactly where mediocre people hover.`
 
-  if (!anthropic) return fallback
+  const client = await getClient()
+  if (!client) return fallback
   try {
-    const response = await anthropic.messages.create({
+    const response = await client.messages.create({
       model: ROAST_MODEL,
       max_tokens: 600,
       system: `You write the "Roast of the Week" column for Accountabili-Buddies, a friend-group accountability app. Voice: deadpan, passive-aggressive sports-desk correspondent filing a report nobody asked for. One single paragraph, 3-5 sentences, no headings, no lists, no markdown. Dramatize the week's highlights and lowlights. Funny, never cruel.`,
