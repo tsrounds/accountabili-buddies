@@ -158,20 +158,22 @@ export async function findActiveChallengeFor(
   uid: string,
 ): Promise<{ challenge: Challenge; member: Member | null } | null> {
   const snap = await getDocs(
-    query(
-      collection(db, 'ab_challenges'),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc'),
-    ),
+    query(collection(db, 'ab_challenges'), where('status', '==', 'active')),
   )
-  for (const d of snap.docs) {
+  // Sort newest-first client-side to avoid requiring a Firestore composite index.
+  const docs = [...snap.docs].sort((a, b) => {
+    const ta = a.data().createdAt?.toMillis?.() ?? 0
+    const tb = b.data().createdAt?.toMillis?.() ?? 0
+    return tb - ta
+  })
+  for (const d of docs) {
     const member = await getMember(d.id, uid)
     if (member) {
       return { challenge: { id: d.id, ...d.data() } as Challenge, member }
     }
   }
   // Creator may not have joined yet — still show their challenge.
-  for (const d of snap.docs) {
+  for (const d of docs) {
     const data = d.data()
     if (data.creatorUid === uid) {
       return { challenge: { id: d.id, ...data } as Challenge, member: null }
