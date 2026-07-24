@@ -17,6 +17,7 @@ export default function CreateMission() {
   const [created, setCreated] = useState<{ challengeId: string; code: string } | null>(
     null,
   )
+  const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const shareRef = useRef<HTMLDivElement>(null)
@@ -30,6 +31,7 @@ export default function CreateMission() {
     e.preventDefault()
     if (!user || busy) return
     setBusy(true)
+    setError('')
     try {
       const result = await createChallenge({
         name: name.trim(),
@@ -39,6 +41,8 @@ export default function CreateMission() {
         durationType: ongoing ? 'ongoing' : 'fixed',
       })
       setCreated(result)
+    } catch {
+      setError('Something went wrong saving your mission. Please try again.')
     } finally {
       setBusy(false)
     }
@@ -194,6 +198,12 @@ export default function CreateMission() {
               </label>
             )}
           </div>
+
+          {error && (
+            <p data-animate className="rounded-xl bg-brick/10 px-4 py-3 text-sm font-bold text-brick">
+              {error}
+            </p>
+          )}
 
           <button
             data-animate

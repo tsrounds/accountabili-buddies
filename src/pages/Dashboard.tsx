@@ -18,6 +18,42 @@ function greeting(): string {
   return h < 12 ? 'Morning' : h < 18 ? 'Afternoon' : 'Evening'
 }
 
+function PendingJoinState({
+  challenge,
+  inviteCode,
+}: {
+  challenge: { id: string; name: string }
+  inviteCode: string | null
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => pageEnter(rootRef.current), [])
+
+  return (
+    <div ref={rootRef} className="grid min-h-[70dvh] place-items-center px-6 text-center">
+      <div className="w-full max-w-sm">
+        <div data-animate>
+          <Mascot variant={1} float size={180} className="mx-auto" />
+        </div>
+        <h2 data-animate className="font-display mt-4 text-3xl uppercase text-space">
+          "{challenge.name}" is live
+        </h2>
+        <p data-animate className="mt-2 text-sm text-space/70">
+          Your mission was created — now set your own goal so you can start checking in.
+        </p>
+        {inviteCode && (
+          <Link
+            data-animate
+            to={`/join/${inviteCode}`}
+            className="font-display mt-6 block rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava"
+          >
+            Set your goal →
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function EmptyState({ isAdmin }: { isAdmin: boolean }) {
   const [code, setCode] = useState('')
   const navigate = useNavigate()
@@ -82,7 +118,7 @@ export default function Dashboard() {
   const data = useChallengeData()
   const rootRef = useRef<HTMLElement>(null)
 
-  const { loading, challenge, member, standings, refresh } = data
+  const { loading, challenge, member, standings, inviteCode, refresh } = data
   const me = standings.find((s) => s.uid === user?.uid)
 
   useEffect(() => {
@@ -113,8 +149,10 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {!challenge || !member ? (
+      {!challenge ? (
         <EmptyState isAdmin={Boolean(profile?.isAdmin)} />
+      ) : !member ? (
+        <PendingJoinState challenge={challenge} inviteCode={inviteCode} />
       ) : (
         <div className="mx-auto max-w-lg px-5">
           {/* ── Your status ─────────────────────────────── */}

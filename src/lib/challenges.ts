@@ -66,6 +66,13 @@ export async function getInvite(code: string): Promise<Invite | null> {
   return snap.exists() ? (snap.data() as Invite) : null
 }
 
+export async function getInviteCodeForChallenge(challengeId: string): Promise<string | null> {
+  const snap = await getDocs(
+    query(collection(db, 'ab_invites'), where('challengeId', '==', challengeId)),
+  )
+  return snap.empty ? null : snap.docs[0].id
+}
+
 export async function getChallenge(id: string): Promise<Challenge | null> {
   const snap = await getDoc(doc(db, 'ab_challenges', id))
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Challenge) : null
@@ -146,10 +153,10 @@ export async function endChallenge(challengeId: string): Promise<void> {
   await updateDoc(doc(db, 'ab_challenges', challengeId), { status: 'complete' })
 }
 
-/** The newest active challenge this user belongs to (small group: few docs). */
+/** The newest active challenge this user belongs to OR created (small group: few docs). */
 export async function findActiveChallengeFor(
   uid: string,
-): Promise<{ challenge: Challenge; member: Member } | null> {
+): Promise<{ challenge: Challenge; member: Member | null } | null> {
   const snap = await getDocs(
     query(
       collection(db, 'ab_challenges'),
@@ -161,6 +168,13 @@ export async function findActiveChallengeFor(
     const member = await getMember(d.id, uid)
     if (member) {
       return { challenge: { id: d.id, ...d.data() } as Challenge, member }
+    }
+  }
+  // Creator may not have joined yet — still show their challenge.
+  for (const d of snap.docs) {
+    const data = d.data()
+    if (data.creatorUid === uid) {
+      return { challenge: { id: d.id, ...data } as Challenge, member: null }
     }
   }
   return null
