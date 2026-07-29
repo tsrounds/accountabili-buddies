@@ -6,7 +6,6 @@ import CreateMission from './pages/CreateMission'
 import Join from './pages/Join'
 import Dashboard from './pages/Dashboard'
 import ChallengeDetail from './pages/ChallengeDetail'
-import Dispatch from './pages/Dispatch'
 
 export default function App() {
   return (
@@ -26,14 +25,6 @@ export default function App() {
           element={
             <AuthGuard>
               <ChallengeDetail />
-            </AuthGuard>
-          }
-        />
-        <Route
-          path="/dispatch"
-          element={
-            <AuthGuard>
-              <Dispatch />
             </AuthGuard>
           }
         />

@@ -48,7 +48,7 @@ export default function Mascot({
     <img
       ref={ref}
       src={src}
-      onError={() => setSrc('/mascot/still.svg')}
+      onError={() => setSrc('/mascot/teststill.svg')}
       width={size}
       height={size}
       alt={alt}

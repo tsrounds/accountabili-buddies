@@ -84,7 +84,7 @@ export default function Dispatch() {
       <div ref={rootRef} className="mx-auto max-w-lg px-5 pt-safe">
         {/* ── Masthead ────────────────────────────────── */}
         <header data-animate className="border-b-4 border-space pt-6 pb-4 text-center">
-          <p className="text-[0.65rem] font-bold tracking-[0.35em] uppercase text-space/50">
+          <p className="text-[0.7rem] font-bold tracking-[0.35em] uppercase text-space/50">
             {dispatch.challengeName} · Issue W{weekNumber}
           </p>
           <h1 className="font-display mt-1 text-[2.75rem] leading-none uppercase text-space">
@@ -101,7 +101,7 @@ export default function Dispatch() {
         <section data-animate className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-steel p-4 text-space shadow-lifted">
             <Award className="h-5 w-5" aria-hidden />
-            <p className="mt-2 text-[0.6rem] font-bold tracking-[0.25em] uppercase text-space/70">
+            <p className="mt-2 text-[0.7rem] font-bold tracking-[0.25em] uppercase text-space/70">
               Hero of the week
             </p>
             <p className="font-display mt-0.5 truncate text-2xl uppercase">
@@ -114,7 +114,7 @@ export default function Dispatch() {
           </div>
           <div className="rounded-2xl bg-brick p-4 text-papaya shadow-lifted">
             <TrendingDown className="h-5 w-5" aria-hidden />
-            <p className="mt-2 text-[0.6rem] font-bold tracking-[0.25em] uppercase text-papaya/70">
+            <p className="mt-2 text-[0.7rem] font-bold tracking-[0.25em] uppercase text-papaya/70">
               Slacker of the week
             </p>
             <p className="font-display mt-0.5 truncate text-2xl uppercase">
@@ -133,7 +133,7 @@ export default function Dispatch() {
             Roast of the week
           </h2>
           <blockquote className="mt-2 border-l-4 border-lava bg-white p-4 pr-5 shadow-card">
-            <p className="text-[1.05rem] leading-relaxed text-space first-letter:font-display first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:leading-[0.85] first-letter:text-lava">
+            <p className="text-base leading-relaxed text-space first-letter:font-display first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:leading-[0.85] first-letter:text-lava">
               {dispatch.roastOfTheWeek}
             </p>
             <footer className="mt-3 text-xs font-bold tracking-wide uppercase text-space/50">
@@ -187,7 +187,7 @@ export default function Dispatch() {
               className="rounded-xl border-2 border-space/10 bg-white p-3 text-center shadow-card"
             >
               <p className="font-display text-2xl text-space">{stat.value}</p>
-              <p className="mt-1 text-[0.6rem] font-bold tracking-wider uppercase text-space/50">
+              <p className="mt-1 text-[0.7rem] font-bold tracking-wider uppercase text-space/50">
                 {stat.label}
               </p>
             </div>

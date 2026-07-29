@@ -74,7 +74,7 @@ export default function Join() {
             to="/"
             className="font-display mt-6 inline-block rounded-xl bg-space px-8 py-3.5 tracking-wide uppercase text-papaya"
           >
-            Back to base
+            Back home
           </Link>
         </div>
       </main>
@@ -103,14 +103,14 @@ export default function Join() {
 
   return (
     <main className="min-h-dvh">
-      <TopBar title="Join mission" />
+      <TopBar title="Join challenge" />
       <div ref={rootRef} className="mx-auto max-w-lg px-5 pb-16">
         <section
           data-animate
           className="rounded-2xl bg-space px-5 py-6 text-papaya shadow-lifted"
         >
           <p className="text-xs font-bold tracking-[0.25em] uppercase text-steel">
-            You’ve been summoned
+            You’re invited
           </p>
           <h2 className="font-display mt-1 text-3xl uppercase">{challenge.name}</h2>
           {challenge.description && (

@@ -2,17 +2,21 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Copy, Share2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { createChallenge } from '../lib/challenges'
+import { createChallenge, joinChallenge } from '../lib/challenges'
+import type { FrequencyPeriod } from '../lib/types'
 import { pageEnter, reveal } from '../lib/motion'
 import TopBar from '../components/TopBar'
 import Mascot from '../components/Mascot'
 
 export default function CreateMission() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [ongoing, setOngoing] = useState(true)
   const [duration, setDuration] = useState(30)
+  const [goal, setGoal] = useState('')
+  const [frequency, setFrequency] = useState(3)
+  const [period, setPeriod] = useState<FrequencyPeriod>('per_week')
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<{ challengeId: string; code: string } | null>(
     null,
@@ -37,6 +41,13 @@ export default function CreateMission() {
         creatorUid: user.uid,
         duration: ongoing ? null : duration,
         durationType: ongoing ? 'ongoing' : 'fixed',
+      })
+      await joinChallenge(result.challengeId, {
+        uid: user.uid,
+        firstName: profile?.firstName ?? 'Buddy',
+        personalGoal: goal.trim(),
+        targetFrequency: frequency,
+        frequencyPeriod: period,
       })
       setCreated(result)
     } finally {
@@ -69,7 +80,7 @@ export default function CreateMission() {
   if (created) {
     return (
       <main className="min-h-dvh">
-        <TopBar title="Mission live" />
+        <TopBar title="Challenge live" />
         <div ref={shareRef} className="mx-auto max-w-lg px-5 pb-16 text-center">
           <Mascot variant={1} float size={140} className="mx-auto mt-4" />
           <h2 className="font-display mt-4 text-3xl uppercase text-space">
@@ -80,10 +91,10 @@ export default function CreateMission() {
           </p>
 
           <div className="mt-6 rounded-2xl bg-space py-6 text-papaya shadow-lifted">
-            <p className="text-xs font-bold tracking-[0.3em] uppercase text-steel">
+            <p className="text-xs font-bold tracking-[0.25em] uppercase text-steel">
               Invite code
             </p>
-            <p className="font-display mt-1 text-5xl tracking-[0.18em]">
+            <p className="font-display mt-1 text-5xl tracking-[0.2em]">
               {created.code}
             </p>
           </div>
@@ -110,10 +121,10 @@ export default function CreateMission() {
           </div>
 
           <Link
-            to={`/join/${created.code}`}
+            to="/"
             className="font-display mt-6 block rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava"
           >
-            Now set your own goal →
+            Go to challenge →
           </Link>
         </div>
       </main>
@@ -122,12 +133,12 @@ export default function CreateMission() {
 
   return (
     <main className="min-h-dvh">
-      <TopBar title="New mission" />
+      <TopBar title="New challenge" />
       <div ref={rootRef} className="mx-auto max-w-lg px-5 pb-16">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <label data-animate className="flex flex-col gap-1">
             <span className="text-xs font-bold tracking-wide uppercase text-space/60">
-              Mission name
+              Challenge name
             </span>
             <input
               type="text"
@@ -164,7 +175,7 @@ export default function CreateMission() {
                 onClick={() => setOngoing(true)}
                 aria-pressed={ongoing}
                 className={`rounded-lg py-2.5 font-bold transition-colors ${
-                  ongoing ? 'bg-space text-papaya' : 'text-space/60'
+                  ongoing ? 'bg-space text-papaya' : 'text-space/60 hover:text-space/80'
                 }`}
               >
                 Ongoing
@@ -174,7 +185,7 @@ export default function CreateMission() {
                 onClick={() => setOngoing(false)}
                 aria-pressed={!ongoing}
                 className={`rounded-lg py-2.5 font-bold transition-colors ${
-                  !ongoing ? 'bg-space text-papaya' : 'text-space/60'
+                  !ongoing ? 'bg-space text-papaya' : 'text-space/60 hover:text-space/80'
                 }`}
               >
                 Fixed days
@@ -195,13 +206,55 @@ export default function CreateMission() {
             )}
           </div>
 
+          <label data-animate className="flex flex-col gap-1">
+            <span className="text-xs font-bold tracking-wide uppercase text-space/60">
+              Your personal goal
+            </span>
+            <input
+              type="text"
+              required
+              maxLength={100}
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              placeholder="Run 5k, write 500 words, touch grass…"
+              className="rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-base text-space placeholder:text-space/30 focus:border-steel"
+            />
+          </label>
+
+          <div data-animate className="flex flex-col gap-1">
+            <span className="text-xs font-bold tracking-wide uppercase text-space/60">
+              How often?
+            </span>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min={1}
+                max={31}
+                required
+                value={frequency}
+                onChange={(e) => setFrequency(Number(e.target.value))}
+                className="w-20 rounded-xl border-2 border-space/15 bg-white px-3 py-3 text-center text-base font-bold text-space focus:border-steel"
+              />
+              <span className="text-sm font-bold text-space/60">×</span>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as FrequencyPeriod)}
+                className="flex-1 rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-base font-bold text-space focus:border-steel"
+              >
+                <option value="per_day">per day</option>
+                <option value="per_week">per week</option>
+                <option value="per_month">per month</option>
+              </select>
+            </div>
+          </div>
+
           <button
             data-animate
             type="submit"
-            disabled={busy || !name.trim()}
+            disabled={busy || !name.trim() || !goal.trim()}
             className="font-display mt-2 rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava disabled:opacity-50"
           >
-            {busy ? 'Creating…' : 'Create mission'}
+            {busy ? 'Creating…' : 'Create challenge'}
           </button>
         </form>
       </div>

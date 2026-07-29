@@ -5,7 +5,7 @@ import {
   getDoc,
   getDocs,
   increment,
-  orderBy,
+  limit,
   query,
   serverTimestamp,
   setDoc,
@@ -64,6 +64,17 @@ export async function createChallenge(input: {
 export async function getInvite(code: string): Promise<Invite | null> {
   const snap = await getDoc(doc(db, 'ab_invites', code.toUpperCase()))
   return snap.exists() ? (snap.data() as Invite) : null
+}
+
+export async function getInviteCode(challengeId: string): Promise<string | null> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'ab_invites'),
+      where('challengeId', '==', challengeId),
+      limit(1),
+    ),
+  )
+  return snap.empty ? null : snap.docs[0].id
 }
 
 export async function getChallenge(id: string): Promise<Challenge | null> {
@@ -142,6 +153,33 @@ export async function checkInToday(
   )
 }
 
+/** Backdate a check-in to a specific past date. Same dedup key as today's. */
+export async function checkInForDate(
+  challengeId: string,
+  uid: string,
+  firstName: string,
+  date: string,
+  note: string,
+): Promise<void> {
+  await setDoc(doc(db, 'ab_challenges', challengeId, 'checkins', `${uid}_${date}`), {
+    uid,
+    firstName,
+    date,
+    note,
+    createdAt: serverTimestamp(),
+  })
+  await setDoc(
+    doc(db, 'ab_challenges', challengeId, 'leaderboard', uid),
+    {
+      uid,
+      firstName,
+      totalCheckins: increment(1),
+      lastCheckinDate: date,
+    },
+    { merge: true },
+  )
+}
+
 export async function endChallenge(challengeId: string): Promise<void> {
   await updateDoc(doc(db, 'ab_challenges', challengeId), { status: 'complete' })
 }
@@ -154,10 +192,14 @@ export async function findActiveChallengeFor(
     query(
       collection(db, 'ab_challenges'),
       where('status', '==', 'active'),
-      orderBy('createdAt', 'desc'),
     ),
   )
-  for (const d of snap.docs) {
+  const docs = snap.docs.sort((a, b) => {
+    const aTime = a.data().createdAt?.toMillis?.() ?? 0
+    const bTime = b.data().createdAt?.toMillis?.() ?? 0
+    return bTime - aTime
+  })
+  for (const d of docs) {
     const member = await getMember(d.id, uid)
     if (member) {
       return { challenge: { id: d.id, ...d.data() } as Challenge, member }

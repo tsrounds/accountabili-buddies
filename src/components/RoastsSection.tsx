@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { animate, stagger, utils } from 'animejs'
 import { Quote } from 'lucide-react'
 import { getOrGenerateDailyRoasts } from '../lib/roasts'
-import { prefersReducedMotion } from '../lib/motion'
+import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
 import type { Challenge, MemberStanding, RoastDoc } from '../lib/types'
 import Mascot from './Mascot'
 
@@ -17,6 +17,7 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const listRef = useRef<HTMLUListElement>(null)
   const pulseRef = useRef<HTMLParagraphElement>(null)
+  const hoverCleanups = useRef(new Map<string, () => void>())
 
   useEffect(() => {
     if (standings.length === 0 || state !== 'idle') return
@@ -82,7 +83,7 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
         <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-space/10 bg-white px-6 py-8 shadow-card">
           <Mascot variant={2} size={110} />
           <p ref={pulseRef} className="text-sm font-bold tracking-wide text-space/70">
-            Compiling today’s intelligence…
+            Cooking up today’s roasts…
           </p>
         </div>
       )}
@@ -105,6 +106,7 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
             <li
               key={entry.uid}
               data-roast-card
+              ref={(el) => attachListHoverLift(el, entry.uid, hoverCleanups.current, { scale: 1.02, y: -2 })}
               style={{ transformOrigin: 'top center', opacity: 0 }}
               className={`relative overflow-hidden rounded-2xl p-4 pl-5 shadow-lifted ${
                 entry.checkedIn ? 'bg-space text-papaya' : 'bg-lava text-papaya'
@@ -118,14 +120,14 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
               />
               <div className="flex items-center justify-between gap-2">
                 <p
-                  className={`text-xs font-bold tracking-[0.22em] uppercase ${
+                  className={`text-xs font-bold tracking-[0.2em] uppercase ${
                     entry.checkedIn ? 'text-steel' : 'text-papaya/70'
                   }`}
                 >
                   {entry.firstName}
                 </p>
                 <span
-                  className={`rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase ${
+                  className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold tracking-wider uppercase ${
                     entry.checkedIn
                       ? 'bg-steel/20 text-steel'
                       : 'bg-brick text-papaya'
@@ -139,7 +141,7 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
                   className="mt-0.5 h-4 w-4 shrink-0 rotate-180 text-papaya/40"
                   aria-hidden
                 />
-                <p className="text-[0.95rem] leading-snug">{entry.roast}</p>
+                <p className="text-base leading-snug">{entry.roast}</p>
               </div>
             </li>
           ))}

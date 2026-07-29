@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { animate, createTimeline, utils } from 'animejs'
 import { Check, Stamp } from 'lucide-react'
-import { prefersReducedMotion } from '../lib/motion'
+import { prefersReducedMotion, useHoverLift } from '../lib/motion'
 
-const BURST_COLORS = ['#C1121F', '#669BBC', '#003049', '#780000']
+const BURST_COLORS = ['var(--color-brick)', 'var(--color-steel)', 'var(--color-space)', 'var(--color-lava)']
 
 /** Radial particle burst around the button — cheap, throwaway DOM. */
 function burst(container: HTMLElement) {
@@ -45,6 +45,7 @@ export default function CheckInButton({ checkedIn, onCheckIn }: CheckInButtonPro
   const btnRef = useRef<HTMLButtonElement>(null)
   const ringRef = useRef<HTMLSpanElement>(null)
   const checkRef = useRef<HTMLSpanElement>(null)
+  const hoverRef = useHoverLift({ scale: 1.03, y: -2 })
 
   const done = checkedIn || justStamped
 
@@ -103,7 +104,10 @@ export default function CheckInButton({ checkedIn, onCheckIn }: CheckInButtonPro
         className="pointer-events-none absolute inset-0 rounded-2xl border-4 border-steel opacity-0"
       />
       <button
-        ref={btnRef}
+        ref={(el) => {
+          (btnRef as React.MutableRefObject<HTMLButtonElement | null>).current = el
+          hoverRef(done ? null : el)
+        }}
         onClick={handleTap}
         disabled={busy || done}
         aria-live="polite"

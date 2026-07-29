@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react'
 import { animate } from 'animejs'
 import { Flame } from 'lucide-react'
 import type { MemberStanding } from '../lib/types'
-import { prefersReducedMotion } from '../lib/motion'
+import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
 
 interface LeaderboardProps {
   standings: MemberStanding[]
@@ -16,6 +16,7 @@ interface LeaderboardProps {
 export default function Leaderboard({ standings, meUid }: LeaderboardProps) {
   const rowRefs = useRef(new Map<string, HTMLLIElement>())
   const prevTops = useRef(new Map<string, number>())
+  const hoverCleanups = useRef(new Map<string, () => void>())
 
   useLayoutEffect(() => {
     const tops = new Map<string, number>()
@@ -52,6 +53,7 @@ export default function Leaderboard({ standings, meUid }: LeaderboardProps) {
             ref={(el) => {
               if (el) rowRefs.current.set(s.uid, el)
               else rowRefs.current.delete(s.uid)
+              attachListHoverLift(el, s.uid, hoverCleanups.current, { scale: 1.02, y: -1 })
             }}
             className={`relative flex items-center gap-3 rounded-xl border-2 px-3.5 py-3 shadow-card ${
               isMe ? 'border-steel bg-steel/15' : 'border-space/10 bg-white'

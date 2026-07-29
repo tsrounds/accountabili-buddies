@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Newspaper, Plus } from 'lucide-react'
+import { Home, Plus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 /** Bottom tab bar — thumb reach first. */
@@ -7,8 +7,8 @@ export default function AppNav() {
   const { profile } = useAuth()
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[0.65rem] font-bold tracking-wide uppercase ${
-      isActive ? 'text-steel' : 'text-papaya/50'
+    `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[0.7rem] font-bold tracking-wide uppercase ${
+      isActive ? 'text-steel' : 'text-papaya/50 hover:text-papaya/70'
     }`
 
   return (
@@ -16,11 +16,7 @@ export default function AppNav() {
       <div className="mx-auto flex max-w-lg items-stretch">
         <NavLink to="/" end className={linkClass}>
           <Home className="h-6 w-6" aria-hidden />
-          Base
-        </NavLink>
-        <NavLink to="/dispatch" className={linkClass}>
-          <Newspaper className="h-6 w-6" aria-hidden />
-          Dispatch
+          Home
         </NavLink>
         {profile?.isAdmin && (
           <NavLink to="/create" className={linkClass}>
