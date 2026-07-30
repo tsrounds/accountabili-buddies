@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Flag, Target, X, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -151,16 +151,20 @@ function HistoryCalendar({
               type="button"
               disabled={!d.has && !canBackdate}
               onClick={() => handleDayClick(d)}
-              className={`relative flex aspect-square flex-col items-center justify-center rounded-lg transition-colors ${
+              className={`relative flex aspect-square flex-col items-center justify-center rounded-lg border transition-colors ${
                 d.has
-                  ? 'bg-steel/20 text-space hover:bg-steel/35 active:bg-steel/50 cursor-pointer'
+                  ? 'bg-steel text-papaya border-steel hover:bg-steel/90 active:bg-steel/80 cursor-pointer shadow-card'
                   : canBackdate
-                    ? 'bg-space/[0.04] text-space/40 hover:bg-brick/10 hover:text-brick/70 cursor-pointer border border-dashed border-transparent hover:border-brick/30'
-                    : 'bg-space/[0.04] text-space/30'
+                    ? 'bg-space/[0.06] text-space/60 border-space/15 hover:bg-brick/10 hover:text-brick hover:border-brick/40 cursor-pointer border-dashed'
+                    : 'bg-space/[0.06] text-space/50 border-space/15'
               } ${d.isToday ? 'ring-2 ring-brick ring-offset-1 ring-offset-white' : ''}`}
             >
               {isNewMonth && (
-                <span className="absolute -top-0.5 text-[8px] font-bold uppercase text-space/40 leading-none">
+                <span
+                  className={`absolute -top-0.5 text-[8px] font-bold uppercase leading-none ${
+                    d.has ? 'text-papaya/80' : 'text-space/50'
+                  }`}
+                >
                   {new Date(2000, d.month).toLocaleString(undefined, {
                     month: 'short',
                   })}
@@ -172,7 +176,7 @@ function HistoryCalendar({
                 {d.day}
               </span>
               {d.has && (
-                <span className="mt-0.5 h-1 w-1 rounded-full bg-steel" />
+                <span className="mt-0.5 h-1 w-1 rounded-full bg-papaya" />
               )}
             </button>
           )
@@ -290,6 +294,8 @@ function HistoryCalendar({
 
 export default function ChallengeDetail() {
   const { id = '' } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const memberParam = searchParams.get('member')
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [challenge, setChallenge] = useState<Challenge | null>(null)
@@ -299,7 +305,15 @@ export default function ChallengeDetail() {
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const historyRef = useRef<HTMLElement>(null)
   const memberHoverCleanups = useRef(new Map<string, () => void>())
+
+  function viewMemberCalendar(uid: string) {
+    setSelectedUid(uid)
+    requestAnimationFrame(() => {
+      historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -327,6 +341,17 @@ export default function ChallengeDetail() {
   useEffect(() => {
     if (!loading) pageEnter(rootRef.current)
   }, [loading])
+
+  useEffect(() => {
+    if (loading || !memberParam) return
+    setSelectedUid(memberParam)
+    requestAnimationFrame(() => {
+      historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    const next = new URLSearchParams(searchParams)
+    next.delete('member')
+    setSearchParams(next, { replace: true })
+  }, [loading, memberParam, searchParams, setSearchParams])
 
   const standings = useMemo(
     () => (challenge ? computeStandings(challenge, members, checkins) : []),
@@ -373,32 +398,38 @@ export default function ChallengeDetail() {
               <li
                 key={s.uid}
                 ref={(el) => attachListHoverLift(el, s.uid, memberHoverCleanups.current, { scale: 1.02, y: -1 })}
-                className="rounded-xl border-2 border-space/10 bg-white px-4 py-3 shadow-card"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-space">
-                    {s.firstName}
-                    {s.uid === user?.uid && (
-                      <span className="text-space/40"> (you)</span>
-                    )}
+                <button
+                  type="button"
+                  onClick={() => viewMemberCalendar(s.uid)}
+                  aria-label={`View ${s.firstName}'s calendar`}
+                  className="w-full rounded-xl border-2 border-space/10 bg-white px-4 py-3 text-left shadow-card hover:border-steel/50 hover:bg-steel/5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-bold text-space">
+                      {s.firstName}
+                      {s.uid === user?.uid && (
+                        <span className="text-space/40"> (you)</span>
+                      )}
+                    </p>
+                    <span className="font-display text-lg text-space">
+                      {s.completionPct}
+                      <span className="text-xs text-space/50">%</span>
+                    </span>
+                  </div>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-space/70">
+                    <Target className="h-3.5 w-3.5 shrink-0 text-steel" aria-hidden />
+                    {s.personalGoal} ·{' '}
+                    {frequencyLabel(s.targetFrequency, s.frequencyPeriod)}
                   </p>
-                  <span className="font-display text-lg text-space">
-                    {s.completionPct}
-                    <span className="text-xs text-space/50">%</span>
-                  </span>
-                </div>
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-space/70">
-                  <Target className="h-3.5 w-3.5 shrink-0 text-steel" aria-hidden />
-                  {s.personalGoal} ·{' '}
-                  {frequencyLabel(s.targetFrequency, s.frequencyPeriod)}
-                </p>
+                </button>
               </li>
             ))}
           </ul>
         </section>
 
         {/* ── History ─────────────────────────────────── */}
-        <section data-animate className="mt-7">
+        <section ref={historyRef} data-animate className="mt-7 scroll-mt-4">
           <h3 className="font-display mb-3 text-xl tracking-wide uppercase text-lava">
             Last 28 days
           </h3>

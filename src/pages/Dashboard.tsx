@@ -286,6 +286,7 @@ function WeeklyDispatch({
 
 export default function Dashboard() {
   const { user, profile, signOutUser } = useAuth()
+  const navigate = useNavigate()
   const data = useChallengeData()
   const rootRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
@@ -421,7 +422,13 @@ export default function Dashboard() {
             <h3 className="font-display mb-3 text-xl tracking-wide uppercase text-lava">
               Leaderboard
             </h3>
-            <Leaderboard standings={standings} meUid={user?.uid} />
+            <Leaderboard
+              standings={standings}
+              meUid={user?.uid}
+              onSelectMember={(uid) =>
+                navigate(`/challenge/${challenge.id}?member=${uid}`)
+              }
+            />
           </section>
 
           {/* ── Today's roasts ──────────────────────────── */}
