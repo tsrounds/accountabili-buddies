@@ -3,6 +3,7 @@ import { animate, stagger, utils } from 'animejs'
 import { Quote } from 'lucide-react'
 import { getOrGenerateDailyRoasts } from '../lib/roasts'
 import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
+import { renderAvatarDataUri } from '../lib/avatar'
 import type { Challenge, MemberStanding, RoastDoc } from '../lib/types'
 import Mascot from './Mascot'
 
@@ -119,13 +120,23 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
                 }`}
               />
               <div className="flex items-center justify-between gap-2">
-                <p
-                  className={`text-xs font-bold tracking-[0.2em] uppercase ${
-                    entry.checkedIn ? 'text-steel' : 'text-papaya/70'
-                  }`}
-                >
-                  {entry.firstName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={renderAvatarDataUri(entry.avatarSeed)}
+                    width={24}
+                    height={24}
+                    alt=""
+                    className="h-6 w-6 rounded-full bg-papaya"
+                    draggable={false}
+                  />
+                  <p
+                    className={`text-xs font-bold tracking-[0.2em] uppercase ${
+                      entry.checkedIn ? 'text-steel' : 'text-papaya/70'
+                    }`}
+                  >
+                    {entry.firstName}
+                  </p>
+                </div>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold tracking-wider uppercase ${
                     entry.checkedIn

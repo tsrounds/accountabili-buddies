@@ -16,6 +16,7 @@ import type { Challenge, Checkin, Member } from '../lib/types'
 import TopBar from '../components/TopBar'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import RecordBadge from '../components/RecordBadge'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
@@ -46,6 +47,7 @@ function HistoryCalendar({
   challengeId,
   uid,
   firstName,
+  avatarSeed,
   onCheckinAdded,
 }: {
   checkins: Checkin[]
@@ -54,6 +56,7 @@ function HistoryCalendar({
   challengeId: string
   uid: string
   firstName: string
+  avatarSeed: string
   onCheckinAdded: () => void
 }) {
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null)
@@ -113,7 +116,7 @@ function HistoryCalendar({
     if (!backdateDay || backdateBusy) return
     setBackdateBusy(true)
     try {
-      await checkInForDate(challengeId, uid, firstName, backdateDay.key, backdateNote.trim())
+      await checkInForDate(challengeId, uid, firstName, avatarSeed, backdateDay.key, backdateNote.trim())
       setBackdateDay(null)
       onCheckinAdded()
     } catch (err) {
@@ -412,10 +415,13 @@ export default function ChallengeDetail() {
                         <span className="text-space/40"> (you)</span>
                       )}
                     </p>
-                    <span className="font-display text-lg text-space">
-                      {s.completionPct}
-                      <span className="text-xs text-space/50">%</span>
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {s.weeklyRecord && <RecordBadge record={s.weeklyRecord} />}
+                      <span className="font-display text-lg text-space">
+                        {s.completionPct}
+                        <span className="text-xs text-space/50">%</span>
+                      </span>
+                    </div>
                   </div>
                   <p className="mt-1 flex items-center gap-1.5 text-sm text-space/70">
                     <Target className="h-3.5 w-3.5 shrink-0 text-steel" aria-hidden />
@@ -457,6 +463,7 @@ export default function ChallengeDetail() {
               challengeId={challenge.id}
               uid={historyUid}
               firstName={profile?.firstName ?? ''}
+              avatarSeed={profile?.avatarSeed ?? ''}
               onCheckinAdded={() => setRefreshKey((k) => k + 1)}
             />
           </div>

@@ -21,14 +21,14 @@ const CHALLENGE_NAME = 'Testing'
 // A pool deliberately covering every branch of the prompt: leader, mid-pack,
 // zero-progress, long streak, and total ghost.
 const POOL: Omit<RoastMemberInput, 'rank'>[] = [
-  { uid: 'u1', firstName: 'Diana', personalGoal: 'Read 30 pages before bed', checkedInToday: true, completionPct: 92, streak: 12 },
-  { uid: 'u2', firstName: 'Marcus', personalGoal: 'Run 3 miles every morning', checkedInToday: true, completionPct: 71, streak: 5 },
-  { uid: 'u3', firstName: 'Sam', personalGoal: 'Write 500 words of my novel', checkedInToday: true, completionPct: 58, streak: 3 },
-  { uid: 'u4', firstName: 'Teddy', personalGoal: 'Stretch for 10 minutes', checkedInToday: false, completionPct: 44, streak: 0 },
-  { uid: 'u5', firstName: 'Jorge', personalGoal: 'No fast food for a month', checkedInToday: false, completionPct: 21, streak: 0 },
-  { uid: 'u6', firstName: 'Priya', personalGoal: 'Meditate 15 minutes daily', checkedInToday: false, completionPct: 0, streak: 0 },
-  { uid: 'u7', firstName: 'Nina', personalGoal: 'Practice guitar every evening', checkedInToday: true, completionPct: 66, streak: 7 },
-  { uid: 'u8', firstName: 'Omar', personalGoal: 'Swim twice a week', checkedInToday: false, completionPct: 33, streak: 0 },
+  { uid: 'u1', firstName: 'Diana', avatarSeed: 'seed-diana', personalGoal: 'Read 30 pages before bed', checkedInToday: true, completionPct: 92, streak: 12 },
+  { uid: 'u2', firstName: 'Marcus', avatarSeed: 'seed-marcus', personalGoal: 'Run 3 miles every morning', checkedInToday: true, completionPct: 71, streak: 5 },
+  { uid: 'u3', firstName: 'Sam', avatarSeed: 'seed-sam', personalGoal: 'Write 500 words of my novel', checkedInToday: true, completionPct: 58, streak: 3 },
+  { uid: 'u4', firstName: 'Teddy', avatarSeed: 'seed-teddy', personalGoal: 'Stretch for 10 minutes', checkedInToday: false, completionPct: 44, streak: 0 },
+  { uid: 'u5', firstName: 'Jorge', avatarSeed: 'seed-jorge', personalGoal: 'No fast food for a month', checkedInToday: false, completionPct: 21, streak: 0 },
+  { uid: 'u6', firstName: 'Priya', avatarSeed: 'seed-priya', personalGoal: 'Meditate 15 minutes daily', checkedInToday: false, completionPct: 0, streak: 0 },
+  { uid: 'u7', firstName: 'Nina', avatarSeed: 'seed-nina', personalGoal: 'Practice guitar every evening', checkedInToday: true, completionPct: 66, streak: 7 },
+  { uid: 'u8', firstName: 'Omar', avatarSeed: 'seed-omar', personalGoal: 'Swim twice a week', checkedInToday: false, completionPct: 33, streak: 0 },
 ]
 
 function arg(name: string): string | undefined {

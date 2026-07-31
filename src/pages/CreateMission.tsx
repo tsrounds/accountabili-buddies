@@ -45,6 +45,7 @@ export default function CreateMission() {
       await joinChallenge(result.challengeId, {
         uid: user.uid,
         firstName: profile?.firstName ?? 'Buddy',
+        avatarSeed: profile?.avatarSeed ?? '',
         personalGoal: goal.trim(),
         targetFrequency: frequency,
         frequencyPeriod: period,

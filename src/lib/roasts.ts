@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import { todayKey } from './dates'
+import { listAmmoForMember } from './challenges'
 import {
   ROAST_MODEL,
   callDailyRoastApi,
@@ -9,6 +10,8 @@ import {
   type RoastMemberInput,
 } from './roastPrompt'
 import type { Challenge, MemberStanding, RoastDoc, RoastEntry } from './types'
+
+const GOSSIP_SAMPLE_SIZE = 3
 
 // Client-side by design: tiny private friend group, no Cloud Functions.
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined
@@ -25,15 +28,24 @@ function getClient(): Promise<Anthropic> | null {
   return clientPromise
 }
 
-function toRoastInput(s: MemberStanding): RoastMemberInput {
+async function toRoastInput(
+  s: MemberStanding,
+  challengeId: string,
+): Promise<RoastMemberInput> {
+  const ammo = await listAmmoForMember(challengeId, s.uid)
   return {
     uid: s.uid,
     firstName: s.firstName,
+    avatarSeed: s.avatarSeed,
     personalGoal: s.personalGoal,
     checkedInToday: s.checkedInToday,
     rank: s.rank,
     completionPct: s.completionPct,
     streak: s.streak,
+    gossip:
+      ammo.length > 0
+        ? ammo.slice(0, GOSSIP_SAMPLE_SIZE).map((a) => a.answer)
+        : undefined,
   }
 }
 
@@ -57,7 +69,12 @@ export async function getOrGenerateDailyRoasts(
   }
   if (standings.length === 0) return null
 
-  const inputs = standings.map(toRoastInput)
+  // Fetch gossip only AFTER the cache-hit early return above, so the
+  // common case (everyone reads the same cached doc) doesn't hit the
+  // ammo subcollection.
+  const inputs = await Promise.all(
+    standings.map((s) => toRoastInput(s, challenge.id)),
+  )
   let entries: RoastEntry[]
   try {
     const client = aiEnabled ? await getClient() : null

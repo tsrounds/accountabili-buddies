@@ -113,6 +113,7 @@ const FAKE_MEMBERS = [
   {
     uid: 'fake-marcus-01',
     firstName: 'Marcus',
+    avatarSeed: 'seed-marcus',
     personalGoal: 'Run 3 miles every morning',
     targetFrequency: 1,
     frequencyPeriod: 'per_day',
@@ -123,6 +124,7 @@ const FAKE_MEMBERS = [
   {
     uid: 'fake-diana-02',
     firstName: 'Diana',
+    avatarSeed: 'seed-diana',
     personalGoal: 'Read 30 pages before bed',
     targetFrequency: 5,
     frequencyPeriod: 'per_week',
@@ -133,6 +135,7 @@ const FAKE_MEMBERS = [
   {
     uid: 'fake-jorge-03',
     firstName: 'Jorge',
+    avatarSeed: 'seed-jorge',
     personalGoal: 'No fast food for a month',
     targetFrequency: 1,
     frequencyPeriod: 'per_day',
@@ -143,6 +146,7 @@ const FAKE_MEMBERS = [
   {
     uid: 'fake-priya-04',
     firstName: 'Priya',
+    avatarSeed: 'seed-priya',
     personalGoal: 'Meditate 15 minutes daily',
     targetFrequency: 1,
     frequencyPeriod: 'per_day',
@@ -153,6 +157,7 @@ const FAKE_MEMBERS = [
   {
     uid: 'fake-sam-05',
     firstName: 'Sam',
+    avatarSeed: 'seed-sam',
     personalGoal: 'Write 500 words of novel every day',
     targetFrequency: 1,
     frequencyPeriod: 'per_day',
@@ -190,6 +195,7 @@ async function main() {
     await firestoreSet(memberPath, {
       uid: m.uid,
       firstName: m.firstName,
+      avatarSeed: m.avatarSeed,
       personalGoal: m.personalGoal,
       targetFrequency: m.targetFrequency,
       frequencyPeriod: m.frequencyPeriod,
@@ -201,6 +207,7 @@ async function main() {
     await firestoreSet(leaderboardPath, {
       uid: m.uid,
       firstName: m.firstName,
+      avatarSeed: m.avatarSeed,
       totalCheckins: m.totalCheckins,
       lastCheckinDate: m.lastCheckinDate,
     })

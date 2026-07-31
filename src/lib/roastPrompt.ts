@@ -17,17 +17,21 @@ Rules:
 - If they didn't: theatrical disappointment
 - If they're leading: imply obsession or overcompensation
 - If they're last: weaponize the gap between them and everyone else
+- If a "gossip" array is present, weave ONE line from it into the roast — paraphrase it as an insider aside, don't quote it verbatim, keep the same never-cruel tone. If no gossip is provided, ignore this rule.
 
 Respond ONLY with a JSON array, no markdown, no preamble.`
 
 export interface RoastMemberInput {
   uid: string
   firstName: string
+  avatarSeed: string
   personalGoal: string
   checkedInToday: boolean
   rank: number
   completionPct: number
   streak: number
+  /** Raw gossip lines from the ammo step. LLM-only — never referenced in fallbacks. */
+  gossip?: string[]
 }
 
 export function extractJson(text: string): string {
@@ -53,9 +57,12 @@ export function fallbackLine(m: RoastMemberInput): string {
 }
 
 export function fallbackRoasts(members: RoastMemberInput[]): RoastEntry[] {
+  // Deliberately does NOT reference m.gossip — unmoderated user input only
+  // reaches output through the LLM's tone-controlled generation.
   return members.map((m) => ({
     uid: m.uid,
     firstName: m.firstName,
+    avatarSeed: m.avatarSeed,
     checkedIn: m.checkedInToday,
     roast: fallbackLine(m),
   }))
@@ -105,6 +112,7 @@ Return: [{ "uid": "...", "firstName": "...", "roast": "..." }]`,
     return {
       uid: m.uid,
       firstName: m.firstName,
+      avatarSeed: m.avatarSeed,
       checkedIn: m.checkedInToday,
       roast: match?.roast ?? fallbackLine(m),
     }

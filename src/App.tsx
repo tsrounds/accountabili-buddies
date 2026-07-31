@@ -36,14 +36,9 @@ export default function App() {
             </AuthGuard>
           }
         />
-        <Route
-          path="/join/:code"
-          element={
-            <AuthGuard>
-              <Join />
-            </AuthGuard>
-          }
-        />
+        {/* Join is intentionally unguarded — the page bootstraps anonymous
+            auth itself so invitees never see a login screen. */}
+        <Route path="/join/:code" element={<Join />} />
       </Routes>
     </AuthProvider>
   )

@@ -3,6 +3,8 @@ import { animate } from 'animejs'
 import { Flame } from 'lucide-react'
 import type { MemberStanding } from '../lib/types'
 import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
+import { renderAvatarDataUri } from '../lib/avatar'
+import RecordBadge from './RecordBadge'
 
 interface LeaderboardProps {
   standings: MemberStanding[]
@@ -71,6 +73,14 @@ export default function Leaderboard({ standings, meUid, onSelectMember }: Leader
                   >
                     {s.rank}
                   </span>
+                  <img
+                    src={renderAvatarDataUri(s.avatarSeed)}
+                    width={36}
+                    height={36}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-full border-2 border-space/10 bg-papaya"
+                    draggable={false}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                       <p className="truncate font-bold text-space">
@@ -82,6 +92,9 @@ export default function Leaderboard({ standings, meUid, onSelectMember }: Leader
                           <Flame className="h-3.5 w-3.5" aria-hidden />
                           {s.streak}
                         </span>
+                      )}
+                      {s.weeklyRecord && (
+                        <RecordBadge record={s.weeklyRecord} />
                       )}
                     </div>
                     <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-space/10">

@@ -9,6 +9,7 @@ import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import RecordBadge from '../components/RecordBadge'
 
 export default function Dispatch() {
   const { loading, challenge, members, checkins, standings } = useChallengeData()
@@ -153,23 +154,44 @@ export default function Dispatch() {
                 <tr className="bg-space text-papaya">
                   <th className="px-4 py-2.5 font-bold">#</th>
                   <th className="py-2.5 font-bold">Name</th>
-                  <th className="py-2.5 text-right font-bold">Week</th>
-                  <th className="px-4 py-2.5 text-right font-bold">Total</th>
+                  <th className="py-2.5 text-right font-bold">Record</th>
+                  <th className="px-4 py-2.5 text-right font-bold">Week</th>
                 </tr>
               </thead>
               <tbody>
-                {dispatch.leaderboard.map((row, i) => (
-                  <tr key={row.uid} className="border-t border-space/8">
-                    <td className="font-display px-4 py-2.5 text-space/60">{i + 1}</td>
-                    <td className="py-2.5 font-bold text-space">{row.firstName}</td>
-                    <td className="py-2.5 text-right font-bold text-steel">
-                      {row.weekCheckins}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-space/70">
-                      {row.totalCheckins}
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const standingsByUid = new Map(standings.map((s) => [s.uid, s]))
+                  const sorted = [...dispatch.leaderboard].sort((a, b) => {
+                    const sa = standingsByUid.get(a.uid)
+                    const sb = standingsByUid.get(b.uid)
+                    const pa = sa?.completionPct ?? 0
+                    const pb = sb?.completionPct ?? 0
+                    if (pb !== pa) return pb - pa
+                    const wa = sa?.weeklyRecord?.wins ?? 0
+                    const wb = sb?.weeklyRecord?.wins ?? 0
+                    if (wb !== wa) return wb - wa
+                    return b.totalCheckins - a.totalCheckins
+                  })
+                  return sorted.map((row, i) => {
+                    const record = standingsByUid.get(row.uid)?.weeklyRecord
+                    return (
+                      <tr key={row.uid} className="border-t border-space/8">
+                        <td className="font-display px-4 py-2.5 text-space/60">{i + 1}</td>
+                        <td className="py-2.5 font-bold text-space">{row.firstName}</td>
+                        <td className="py-2.5 text-right">
+                          {record ? (
+                            <RecordBadge record={record} />
+                          ) : (
+                            <span className="text-xs text-space/40">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-bold text-steel">
+                          {row.weekCheckins}
+                        </td>
+                      </tr>
+                    )
+                  })
+                })()}
               </tbody>
             </table>
           </div>

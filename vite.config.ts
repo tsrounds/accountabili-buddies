@@ -20,6 +20,7 @@ export default defineConfig({
       'animejs',
       'lucide-react',
       '@anthropic-ai/sdk',
+      '@dicebear/core',
     ],
   },
 })

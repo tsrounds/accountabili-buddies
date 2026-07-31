@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { animate, createTimeline } from 'animejs'
-import { Send, MailCheck } from 'lucide-react'
+import { ArrowRight, Send, MailCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import Mascot from '../components/Mascot'
 import LoadingScreen from '../components/LoadingScreen'
+import AvatarBuilder from '../components/AvatarBuilder'
 import { prefersReducedMotion } from '../lib/motion'
+import { randomAvatarSeed } from '../lib/avatar'
 
-type Phase = 'form' | 'sending' | 'sent'
+type Phase = 'identity' | 'form' | 'sending' | 'sent'
 
 export default function Login() {
   const {
@@ -18,8 +20,9 @@ export default function Login() {
     sendLink,
     confirmEmailAndSignIn,
   } = useAuth()
-  const [phase, setPhase] = useState<Phase>('form')
+  const [phase, setPhase] = useState<Phase>(needsEmailConfirm ? 'form' : 'identity')
   const [firstName, setFirstName] = useState('')
+  const [avatarSeed, setAvatarSeed] = useState(() => randomAvatarSeed())
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const rootRef = useRef<HTMLElement>(null)
@@ -75,7 +78,7 @@ export default function Login() {
     if (!firstName.trim() || !cleanEmail) return
     setPhase('sending')
     try {
-      await sendLink(cleanEmail, firstName.trim())
+      await sendLink(cleanEmail, firstName.trim(), avatarSeed)
       setPhase('sent')
     } catch (err) {
       console.error(err)
@@ -118,9 +121,37 @@ export default function Login() {
           </div>
           <button
             className="mt-4 text-sm font-bold text-steel underline underline-offset-4"
-            onClick={() => setPhase('form')}
+            onClick={() => setPhase('identity')}
           >
             Wrong email? Start over
+          </button>
+        </div>
+      ) : phase === 'identity' && !needsEmailConfirm ? (
+        <div data-animate="form" className="mt-6 flex w-full max-w-sm flex-col gap-4">
+          <AvatarBuilder seed={avatarSeed} onChange={setAvatarSeed} />
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-bold tracking-wide uppercase text-space/60">
+              First name
+            </span>
+            <input
+              type="text"
+              autoComplete="given-name"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Teddy"
+              className="rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-base text-space placeholder:text-space/30 focus:border-steel"
+            />
+          </label>
+          <button
+            data-animate="cta"
+            type="button"
+            onClick={() => setPhase('form')}
+            disabled={!firstName.trim()}
+            className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-brick px-6 py-4 font-display text-lg tracking-wide uppercase text-papaya shadow-lifted transition-colors active:bg-lava disabled:opacity-60"
+          >
+            Next
+            <ArrowRight className="h-5 w-5" aria-hidden />
           </button>
         </div>
       ) : (
@@ -133,22 +164,6 @@ export default function Login() {
             <p className="rounded-xl bg-steel/20 px-4 py-3 text-sm font-bold text-space">
               New device detected. Confirm the email this link was sent to.
             </p>
-          )}
-          {!needsEmailConfirm && (
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-bold tracking-wide uppercase text-space/60">
-                First name
-              </span>
-              <input
-                type="text"
-                autoComplete="given-name"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Teddy"
-                className="rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-base text-space placeholder:text-space/30 focus:border-steel"
-              />
-            </label>
           )}
           <label className="flex flex-col gap-1">
             <span className="text-xs font-bold tracking-wide uppercase text-space/60">
@@ -166,19 +181,30 @@ export default function Login() {
             />
           </label>
           {error && <p className="text-sm font-bold text-brick">{error}</p>}
-          <button
-            data-animate="cta"
-            type="submit"
-            disabled={phase === 'sending'}
-            className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-brick px-6 py-4 font-display text-lg tracking-wide uppercase text-papaya shadow-lifted transition-colors active:bg-lava disabled:opacity-60"
-          >
-            <Send className="h-5 w-5" aria-hidden />
-            {phase === 'sending'
-              ? 'Sending…'
-              : needsEmailConfirm
-                ? 'Confirm & sign in'
-                : 'Send magic link'}
-          </button>
+          <div className="flex items-center gap-2">
+            {!needsEmailConfirm && (
+              <button
+                type="button"
+                onClick={() => setPhase('identity')}
+                className="rounded-xl bg-space/8 px-4 py-4 text-sm font-bold text-space/70"
+              >
+                Back
+              </button>
+            )}
+            <button
+              data-animate="cta"
+              type="submit"
+              disabled={phase === 'sending'}
+              className="mt-0 flex flex-1 items-center justify-center gap-2 rounded-xl bg-brick px-6 py-4 font-display text-lg tracking-wide uppercase text-papaya shadow-lifted transition-colors active:bg-lava disabled:opacity-60"
+            >
+              <Send className="h-5 w-5" aria-hidden />
+              {phase === 'sending'
+                ? 'Sending…'
+                : needsEmailConfirm
+                  ? 'Confirm & sign in'
+                  : 'Send magic link'}
+            </button>
+          </div>
         </form>
       )}
 

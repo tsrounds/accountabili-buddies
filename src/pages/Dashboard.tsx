@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Award, Check, ChevronRight, Copy, LogOut, Share2, Target, TrendingDown } from 'lucide-react'
+import { Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChallengeData } from '../hooks/useChallengeData'
-import { checkInToday, getInviteCode } from '../lib/challenges'
+import { checkInToday, getInviteCode, updateMemberProfile } from '../lib/challenges'
 import { getOrGenerateDispatch } from '../lib/dispatch'
 import { frequencyLabel } from '../lib/stats'
 import { pageEnter, useHoverLift } from '../lib/motion'
+import { renderAvatarDataUri } from '../lib/avatar'
 import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
 import CheckInButton from '../components/CheckInButton'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import ProfileModal from '../components/ProfileModal'
 import RoastsSection from '../components/RoastsSection'
 
 function greeting(): string {
@@ -285,16 +287,27 @@ function WeeklyDispatch({
 }
 
 export default function Dashboard() {
-  const { user, profile, signOutUser } = useAuth()
+  const { user, profile, signOutUser, completeProfile } = useAuth()
   const navigate = useNavigate()
   const data = useChallengeData()
   const rootRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
 
   const { loading, challenge, member, members, checkins, standings, refresh } = data
   const me = standings.find((s) => s.uid === user?.uid)
   const challengeCardRef = useHoverLift({ scale: 1.02, y: -3 })
+
+  async function saveProfile(patch: { firstName: string; avatarSeed: string }) {
+    await completeProfile(patch)
+    // Push the change onto this challenge's denormalized copies so the
+    // leaderboard updates without waiting for the next check-in.
+    if (challenge && member && user) {
+      await updateMemberProfile(challenge.id, user.uid, patch)
+    }
+    await refresh()
+  }
 
   useEffect(() => {
     if (!loading && challenge) pageEnter(rootRef.current)
@@ -319,11 +332,18 @@ export default function Dashboard() {
             </h1>
           </div>
           <button
-            onClick={() => void signOutUser()}
-            aria-label="Sign out"
-            className="grid h-10 w-10 place-items-center rounded-full text-space/50 active:bg-space/10"
+            onClick={() => setShowProfile(true)}
+            aria-label="Edit your profile"
+            className="grid h-11 w-11 place-items-center overflow-hidden rounded-full border-2 border-space/15 bg-white active:border-steel"
           >
-            <LogOut className="h-5 w-5" aria-hidden />
+            <img
+              src={renderAvatarDataUri(profile?.avatarSeed ?? '')}
+              width={44}
+              height={44}
+              alt=""
+              className="h-11 w-11"
+              draggable={false}
+            />
           </button>
         </div>
       </header>
@@ -365,6 +385,13 @@ export default function Dashboard() {
                     <p className="mt-1 text-[0.7rem] font-bold tracking-wider uppercase text-papaya/50">
                       Completion
                     </p>
+                    {me.weeklyRecord && (
+                      <p className="mt-1 text-[0.7rem] font-bold tracking-wider uppercase text-steel">
+                        {me.weeklyRecord.wins + me.weeklyRecord.losses === 0
+                          ? 'New record'
+                          : `${me.weeklyRecord.wins}W-${me.weeklyRecord.losses}L`}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="font-display text-4xl leading-none text-papaya">
@@ -408,7 +435,7 @@ export default function Dashboard() {
                   checkedIn={Boolean(me?.checkedInToday)}
                   onCheckIn={async (note) => {
                     if (!user || !profile) return
-                    await checkInToday(challenge.id, user.uid, profile.firstName, note)
+                    await checkInToday(challenge.id, user.uid, profile.firstName, profile.avatarSeed, note)
                     await refresh()
                   }}
                 />
@@ -446,6 +473,16 @@ export default function Dashboard() {
             />
           </div>
         </div>
+      )}
+
+      {showProfile && (
+        <ProfileModal
+          firstName={profile?.firstName ?? ''}
+          avatarSeed={profile?.avatarSeed ?? ''}
+          onSave={saveProfile}
+          onSignOut={() => void signOutUser()}
+          onClose={() => setShowProfile(false)}
+        />
       )}
 
       <AppNav />

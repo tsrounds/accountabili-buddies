@@ -1,5 +1,14 @@
-import type { Challenge, Checkin, Member, MemberStanding } from './types'
-import { daysElapsedSince, todayKey, dateKey, addDays } from './dates'
+import type {
+  Challenge,
+  Checkin,
+  FrequencyPeriod,
+  Member,
+  MemberStanding,
+  WeekOutcome,
+  WeeklyRecord,
+} from './types'
+import { addDays, dateKey, daysElapsedSince, isoWeekId, todayKey, weekRange } from './dates'
+import { FALLBACK_AVATAR_SEED } from './avatar'
 
 /** Expected check-ins for a member given how long the challenge has run. */
 export function expectedCheckins(member: Member, challenge: Challenge): number {
@@ -32,9 +41,73 @@ export function computeStreak(dates: Set<string>): number {
   return streak
 }
 
+/** Weekly target derived from a member's cadence. `per_month` is not scored. */
+export function getWeeklyTarget(
+  targetFrequency: number,
+  frequencyPeriod: FrequencyPeriod,
+): number | null {
+  if (frequencyPeriod === 'per_month') return null
+  if (frequencyPeriod === 'per_day') return Math.max(1, targetFrequency * 7)
+  return Math.max(1, targetFrequency)
+}
+
+/**
+ * Walks every completed ISO week between (start of eligibility) and (current
+ * week, exclusive), returning a W/L record. Eligibility starts on the Monday
+ * of the week AFTER the member joined (or the challenge started) unless they
+ * joined on a Monday, in which case that same week counts. Returns null for
+ * `per_month` members — they're not scored under W/L.
+ */
+export function computeWeeklyRecord(
+  member: Member,
+  memberCheckins: Checkin[],
+  challenge: Challenge,
+  now: Date = new Date(),
+): WeeklyRecord | null {
+  const weeklyTarget = getWeeklyTarget(member.targetFrequency, member.frequencyPeriod)
+  if (weeklyTarget === null) return null
+
+  const datesByWeek = new Map<string, Set<string>>()
+  for (const c of memberCheckins) {
+    const [y, m, d] = c.date.split('-').map(Number)
+    if (!y || !m || !d) continue
+    const dt = new Date(y, m - 1, d)
+    const wid = isoWeekId(dt)
+    let bucket = datesByWeek.get(wid)
+    if (!bucket) {
+      bucket = new Set<string>()
+      datesByWeek.set(wid, bucket)
+    }
+    bucket.add(c.date)
+  }
+
+  const challengeStart = challenge.startDate?.toDate?.() ?? new Date()
+  const joined = member.joinedAt?.toDate?.() ?? challengeStart
+  let eligible = joined.getTime() > challengeStart.getTime() ? joined : challengeStart
+  // If not a Monday, skip to the following Monday (mid-week joiners lose that week).
+  if (eligible.getDay() !== 1) {
+    eligible = addDays(weekRange(eligible).end, 1)
+  }
+
+  const currentWeekStart = weekRange(now).start
+  const weeks: WeekOutcome[] = []
+  let cursor = weekRange(eligible).start
+
+  while (cursor.getTime() < currentWeekStart.getTime()) {
+    const wid = isoWeekId(cursor)
+    const count = datesByWeek.get(wid)?.size ?? 0
+    const pct = Math.round((count / weeklyTarget) * 100)
+    weeks.push({ weekId: wid, pct, hit: count >= weeklyTarget })
+    cursor = addDays(cursor, 7)
+  }
+
+  const wins = weeks.reduce((n, w) => (w.hit ? n + 1 : n), 0)
+  return { weeklyTarget, wins, losses: weeks.length - wins, weeks }
+}
+
 /**
  * Fold members + all their check-ins into ranked standings.
- * Rank is by completion %, ties broken by total check-ins.
+ * Rank is by completion %, ties broken by weekly wins then total check-ins.
  */
 export function computeStandings(
   challenge: Challenge,
@@ -57,6 +130,7 @@ export function computeStandings(
     return {
       uid: m.uid,
       firstName: m.firstName,
+      avatarSeed: m.avatarSeed ?? FALLBACK_AVATAR_SEED,
       personalGoal: m.personalGoal,
       targetFrequency: m.targetFrequency,
       frequencyPeriod: m.frequencyPeriod,
@@ -65,12 +139,17 @@ export function computeStandings(
       streak: computeStreak(dates),
       checkedInToday: dates.has(today),
       rank: 0,
+      weeklyRecord: computeWeeklyRecord(m, mine, challenge),
     }
   })
 
-  standings.sort(
-    (a, b) => b.completionPct - a.completionPct || b.totalCheckins - a.totalCheckins,
-  )
+  standings.sort((a, b) => {
+    if (b.completionPct !== a.completionPct) return b.completionPct - a.completionPct
+    const aWins = a.weeklyRecord?.wins ?? 0
+    const bWins = b.weeklyRecord?.wins ?? 0
+    if (bWins !== aWins) return bWins - aWins
+    return b.totalCheckins - a.totalCheckins
+  })
   standings.forEach((s, i) => (s.rank = i + 1))
   return standings
 }

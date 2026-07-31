@@ -4,6 +4,7 @@ export interface UserProfile {
   uid: string
   email: string
   firstName: string
+  avatarSeed: string
   isAdmin: boolean
   createdAt: Timestamp
 }
@@ -27,6 +28,7 @@ export interface Challenge {
 export interface Member {
   uid: string
   firstName: string
+  avatarSeed: string
   personalGoal: string
   targetFrequency: number
   frequencyPeriod: FrequencyPeriod
@@ -44,6 +46,7 @@ export interface Checkin {
 export interface LeaderboardDoc {
   uid: string
   firstName: string
+  avatarSeed: string
   totalCheckins: number
   lastCheckinDate: string
 }
@@ -51,6 +54,7 @@ export interface LeaderboardDoc {
 export interface RoastEntry {
   uid: string
   firstName: string
+  avatarSeed: string
   checkedIn: boolean
   roast: string
 }
@@ -87,10 +91,42 @@ export interface Invite {
   createdAt: Timestamp
 }
 
+export interface AmmoQuestionTemplate {
+  id: string
+  /** Contains "{name}" placeholder, substituted before display/persist. */
+  template: string
+}
+
+/** One answered gossip prompt. Lives under ab_challenges/{id}/ammo. */
+export interface AmmoEntry {
+  aboutUid: string
+  aboutFirstName: string
+  byUid: string
+  byFirstName: string
+  questionId: string
+  question: string
+  answer: string
+  createdAt: Timestamp
+}
+
+export interface WeekOutcome {
+  weekId: string // "2026-W30"
+  pct: number // weekCheckins / weeklyTarget * 100 (rounded)
+  hit: boolean
+}
+
+export interface WeeklyRecord {
+  weeklyTarget: number
+  wins: number
+  losses: number
+  weeks: WeekOutcome[]
+}
+
 /** Everything the dashboard needs about one member, derived client-side. */
 export interface MemberStanding {
   uid: string
   firstName: string
+  avatarSeed: string
   personalGoal: string
   targetFrequency: number
   frequencyPeriod: FrequencyPeriod
@@ -99,4 +135,5 @@ export interface MemberStanding {
   streak: number
   checkedInToday: boolean
   rank: number
+  weeklyRecord: WeeklyRecord | null
 }
