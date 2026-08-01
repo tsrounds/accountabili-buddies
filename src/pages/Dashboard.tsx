@@ -9,6 +9,7 @@ import { frequencyLabel } from '../lib/stats'
 import { pageEnter, useHoverLift } from '../lib/motion'
 import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
+import Avatar from '../components/Avatar'
 import CheckInButton from '../components/CheckInButton'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
@@ -308,19 +309,22 @@ export default function Dashboard() {
   return (
     <main ref={rootRef} className="min-h-dvh pb-32">
       <header className="pt-safe">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-5 pt-4">
-          <div>
-            <p className="text-xs font-bold tracking-[0.25em] uppercase text-space/50">
-              {greeting()},
-            </p>
-            <h1 className="font-display text-2xl leading-none uppercase text-space">
-              {profile?.firstName ?? 'Buddy'}
-            </h1>
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-5 pt-4">
+          <div className="flex min-w-0 items-center gap-3">
+            {user && <Avatar seed={user.uid} size={44} alt="" />}
+            <div className="min-w-0">
+              <p className="text-xs font-bold tracking-[0.25em] uppercase text-space/50">
+                {greeting()},
+              </p>
+              <h1 className="font-display truncate text-2xl leading-none uppercase text-space">
+                {profile?.firstName ?? 'Buddy'}
+              </h1>
+            </div>
           </div>
           <button
             onClick={() => void signOutUser()}
             aria-label="Sign out"
-            className="grid h-10 w-10 place-items-center rounded-full text-space/50 active:bg-space/10"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-space/50 active:bg-space/10"
           >
             <LogOut className="h-5 w-5" aria-hidden />
           </button>

@@ -3,6 +3,7 @@ import { animate } from 'animejs'
 import { Flame } from 'lucide-react'
 import type { MemberStanding } from '../lib/types'
 import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
+import Avatar from './Avatar'
 
 interface LeaderboardProps {
   standings: MemberStanding[]
@@ -70,6 +71,7 @@ export default function Leaderboard({ standings, meUid }: LeaderboardProps) {
             >
               {s.rank}
             </span>
+            <Avatar seed={s.uid} size={40} alt={s.firstName} />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
                 <p className="truncate font-bold text-space">

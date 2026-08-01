@@ -16,6 +16,7 @@ import type { Challenge, Checkin, Member } from '../lib/types'
 import TopBar from '../components/TopBar'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import Avatar from '../components/Avatar'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
@@ -375,23 +376,30 @@ export default function ChallengeDetail() {
                 ref={(el) => attachListHoverLift(el, s.uid, memberHoverCleanups.current, { scale: 1.02, y: -1 })}
                 className="rounded-xl border-2 border-space/10 bg-white px-4 py-3 shadow-card"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-space">
-                    {s.firstName}
-                    {s.uid === user?.uid && (
-                      <span className="text-space/40"> (you)</span>
-                    )}
-                  </p>
-                  <span className="font-display text-lg text-space">
-                    {s.completionPct}
-                    <span className="text-xs text-space/50">%</span>
-                  </span>
+                <div className="flex items-center gap-3">
+                  <Avatar seed={s.uid} size={44} alt={s.firstName} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="truncate font-bold text-space">
+                        {s.firstName}
+                        {s.uid === user?.uid && (
+                          <span className="text-space/40"> (you)</span>
+                        )}
+                      </p>
+                      <span className="font-display shrink-0 text-lg text-space">
+                        {s.completionPct}
+                        <span className="text-xs text-space/50">%</span>
+                      </span>
+                    </div>
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-space/70">
+                      <Target className="h-3.5 w-3.5 shrink-0 text-steel" aria-hidden />
+                      <span className="truncate">
+                        {s.personalGoal} ·{' '}
+                        {frequencyLabel(s.targetFrequency, s.frequencyPeriod)}
+                      </span>
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-space/70">
-                  <Target className="h-3.5 w-3.5 shrink-0 text-steel" aria-hidden />
-                  {s.personalGoal} ·{' '}
-                  {frequencyLabel(s.targetFrequency, s.frequencyPeriod)}
-                </p>
               </li>
             ))}
           </ul>

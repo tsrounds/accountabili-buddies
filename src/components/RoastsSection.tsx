@@ -5,6 +5,7 @@ import { getOrGenerateDailyRoasts } from '../lib/roasts'
 import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
 import type { Challenge, MemberStanding, RoastDoc } from '../lib/types'
 import Mascot from './Mascot'
+import Avatar from './Avatar'
 
 interface RoastsSectionProps {
   challenge: Challenge
@@ -119,13 +120,16 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
                 }`}
               />
               <div className="flex items-center justify-between gap-2">
-                <p
-                  className={`text-xs font-bold tracking-[0.2em] uppercase ${
-                    entry.checkedIn ? 'text-steel' : 'text-papaya/70'
-                  }`}
-                >
-                  {entry.firstName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <Avatar seed={entry.uid} size={28} alt={entry.firstName} />
+                  <p
+                    className={`text-xs font-bold tracking-[0.2em] uppercase ${
+                      entry.checkedIn ? 'text-steel' : 'text-papaya/70'
+                    }`}
+                  >
+                    {entry.firstName}
+                  </p>
+                </div>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold tracking-wider uppercase ${
                     entry.checkedIn
