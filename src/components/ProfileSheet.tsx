@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { animate } from 'animejs'
 import { Dice5, LogOut, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { prefersReducedMotion } from '../lib/motion'
 import Avatar from './Avatar'
 
 interface ProfileSheetProps {
@@ -10,6 +12,9 @@ interface ProfileSheetProps {
 function randomSeed(): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 12)
 }
+
+// Ease-out roll cadence: fast at first, then decelerating. Total ~1s.
+const ROLL_DELAYS = [45, 55, 70, 90, 115, 145, 180, 220, 265]
 
 /**
  * Bottom sheet: edit first name and roll the avatar until it looks right.
@@ -25,16 +30,67 @@ export default function ProfileSheet({ onClose }: ProfileSheetProps) {
   const [seed, setSeed] = useState(initialSeed)
   const [busy, setBusy] = useState(false)
   const [savedAt, setSavedAt] = useState(0)
+  const [rolling, setRolling] = useState(false)
+
+  const avatarRef = useRef<HTMLDivElement>(null)
+  const rollTimersRef = useRef<number[]>([])
 
   useEffect(() => {
     setName(initialName)
     setSeed(initialSeed)
   }, [initialName, initialSeed])
 
+  // Clear any pending roll timers on unmount so we don't setState after teardown.
+  useEffect(() => {
+    return () => {
+      rollTimersRef.current.forEach(clearTimeout)
+      rollTimersRef.current = []
+    }
+  }, [])
+
   const dirty = name.trim() !== initialName || seed !== initialSeed
   const trimmed = name.trim()
-  const canSave = dirty && trimmed.length > 0 && !busy
+  const canSave = dirty && trimmed.length > 0 && !busy && !rolling
   const showSaved = !dirty && savedAt > 0 && Date.now() - savedAt < 2500
+
+  function handleRoll() {
+    if (rolling) return
+    const finalSeed = randomSeed()
+
+    // Reduced-motion: skip the tumble, just land on the new face.
+    if (prefersReducedMotion()) {
+      setSeed(finalSeed)
+      return
+    }
+
+    setRolling(true)
+    if (avatarRef.current) {
+      animate(avatarRef.current, {
+        rotate: [
+          { to: -8, duration: 90, ease: 'inOutSine' },
+          { to: 6, duration: 110, ease: 'inOutSine' },
+          { to: -4, duration: 140, ease: 'inOutSine' },
+          { to: 2, duration: 180, ease: 'inOutSine' },
+          { to: 0, duration: 260, ease: 'outCubic' },
+        ],
+        scale: [
+          { to: 1.06, duration: 200, ease: 'outQuad' },
+          { to: 1, duration: 580, ease: 'outCubic' },
+        ],
+      })
+    }
+
+    let elapsed = 0
+    ROLL_DELAYS.forEach((delay, i) => {
+      elapsed += delay
+      const isLast = i === ROLL_DELAYS.length - 1
+      const t = window.setTimeout(() => {
+        setSeed(isLast ? finalSeed : randomSeed())
+        if (isLast) setRolling(false)
+      }, elapsed)
+      rollTimersRef.current.push(t)
+    })
+  }
 
   async function handleSave() {
     if (!canSave) return
@@ -70,13 +126,19 @@ export default function ProfileSheet({ onClose }: ProfileSheetProps) {
         </div>
 
         <div className="mt-5 flex items-center gap-4">
-          <Avatar seed={seed} size={128} bare alt="" />
+          <div ref={avatarRef} className="shrink-0" style={{ willChange: 'transform' }}>
+            <Avatar seed={seed} size={128} bare alt="" />
+          </div>
           <div className="min-w-0 flex-1">
             <button
-              onClick={() => setSeed(randomSeed())}
-              className="font-display flex w-full items-center justify-center gap-2 rounded-xl bg-space px-4 py-3 tracking-wide uppercase text-papaya active:bg-space/85"
+              onClick={handleRoll}
+              disabled={rolling}
+              className="font-display flex w-full items-center justify-center gap-2 rounded-xl bg-space px-4 py-3 tracking-wide uppercase text-papaya active:bg-space/85 disabled:opacity-70"
             >
-              <Dice5 className="h-5 w-5" aria-hidden />
+              <Dice5
+                className={`h-5 w-5 ${rolling ? 'animate-spin' : ''}`}
+                aria-hidden
+              />
               Roll again
             </button>
             <p className="mt-2 text-sm text-space/60">
