@@ -4,6 +4,7 @@ export interface UserProfile {
   uid: string
   email: string
   firstName: string
+  avatarSeed: string
   isAdmin: boolean
   createdAt: Timestamp
 }
@@ -27,6 +28,7 @@ export interface Challenge {
 export interface Member {
   uid: string
   firstName: string
+  avatarSeed?: string
   personalGoal: string
   targetFrequency: number
   frequencyPeriod: FrequencyPeriod
@@ -91,6 +93,7 @@ export interface Invite {
 export interface MemberStanding {
   uid: string
   firstName: string
+  avatarSeed?: string
   personalGoal: string
   targetFrequency: number
   frequencyPeriod: FrequencyPeriod

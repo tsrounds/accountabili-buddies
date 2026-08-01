@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Award, Check, ChevronRight, Copy, LogOut, Share2, Target, TrendingDown } from 'lucide-react'
+import { Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChallengeData } from '../hooks/useChallengeData'
 import { checkInToday, getInviteCode } from '../lib/challenges'
@@ -14,6 +14,7 @@ import CheckInButton from '../components/CheckInButton'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import ProfileSheet from '../components/ProfileSheet'
 import RoastsSection from '../components/RoastsSection'
 
 function greeting(): string {
@@ -286,10 +287,11 @@ function WeeklyDispatch({
 }
 
 export default function Dashboard() {
-  const { user, profile, signOutUser } = useAuth()
+  const { user, profile } = useAuth()
   const data = useChallengeData()
   const rootRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
 
   const { loading, challenge, member, members, checkins, standings, refresh } = data
@@ -310,24 +312,23 @@ export default function Dashboard() {
     <main ref={rootRef} className="min-h-dvh pb-32">
       <header className="pt-safe">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-5 pt-4">
-          <div className="flex min-w-0 items-center gap-3">
-            {user && <Avatar seed={user.uid} size={44} alt="" />}
-            <div className="min-w-0">
-              <p className="text-xs font-bold tracking-[0.25em] uppercase text-space/50">
-                {greeting()},
-              </p>
-              <h1 className="font-display truncate text-2xl leading-none uppercase text-space">
-                {profile?.firstName ?? 'Buddy'}
-              </h1>
-            </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold tracking-[0.25em] uppercase text-space/50">
+              {greeting()},
+            </p>
+            <h1 className="font-display truncate text-2xl leading-none uppercase text-space">
+              {profile?.firstName ?? 'Buddy'}
+            </h1>
           </div>
-          <button
-            onClick={() => void signOutUser()}
-            aria-label="Sign out"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-space/50 active:bg-space/10"
-          >
-            <LogOut className="h-5 w-5" aria-hidden />
-          </button>
+          {user && (
+            <button
+              onClick={() => setShowProfile(true)}
+              aria-label="Open profile"
+              className="shrink-0 rounded-full ring-2 ring-transparent transition-shadow active:ring-space/20"
+            >
+              <Avatar seed={profile?.avatarSeed ?? user.uid} size={44} alt="" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -446,6 +447,8 @@ export default function Dashboard() {
       )}
 
       <AppNav />
+
+      {showProfile && <ProfileSheet onClose={() => setShowProfile(false)} />}
     </main>
   )
 }

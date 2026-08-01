@@ -57,6 +57,7 @@ export function computeStandings(
     return {
       uid: m.uid,
       firstName: m.firstName,
+      avatarSeed: m.avatarSeed,
       personalGoal: m.personalGoal,
       targetFrequency: m.targetFrequency,
       frequencyPeriod: m.frequencyPeriod,

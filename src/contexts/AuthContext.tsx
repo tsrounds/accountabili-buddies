@@ -14,9 +14,10 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { ADMIN_EMAIL } from '../lib/constants'
+import { syncMemberProfile } from '../lib/challenges'
 import type { UserProfile } from '../lib/types'
 
 const PENDING_EMAIL_KEY = 'ab_pendingEmail'
@@ -33,6 +34,8 @@ interface AuthContextValue {
   sendLink: (email: string, firstName: string) => Promise<void>
   confirmEmailAndSignIn: (email: string) => Promise<void>
   signOutUser: () => Promise<void>
+  /** Patch the caller's profile doc + mirror name/avatar into member docs. */
+  updateProfile: (patch: { firstName?: string; avatarSeed?: string }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -40,7 +43,15 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 async function ensureUserDoc(user: User): Promise<UserProfile> {
   const ref = doc(db, 'ab_users', user.uid)
   const snap = await getDoc(ref)
-  if (snap.exists()) return snap.data() as UserProfile
+  if (snap.exists()) {
+    const data = snap.data() as UserProfile
+    // Backfill avatarSeed for accounts predating the profile-editor feature.
+    if (!data.avatarSeed) {
+      await updateDoc(ref, { avatarSeed: user.uid })
+      data.avatarSeed = user.uid
+    }
+    return data
+  }
 
   const email = user.email ?? ''
   const firstName =
@@ -49,6 +60,7 @@ async function ensureUserDoc(user: User): Promise<UserProfile> {
     uid: user.uid,
     email,
     firstName,
+    avatarSeed: user.uid,
     isAdmin: email.toLowerCase() === ADMIN_EMAIL,
     createdAt: serverTimestamp(),
   }
@@ -132,6 +144,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOutUser = useCallback(() => signOut(auth), [])
 
+  const updateProfile = useCallback(
+    async (patch: { firstName?: string; avatarSeed?: string }) => {
+      if (!user) return
+      await updateDoc(doc(db, 'ab_users', user.uid), patch)
+      setProfile((prev) => (prev ? { ...prev, ...patch } : prev))
+      // Best-effort: mirror name/avatar into any active challenge memberships.
+      void syncMemberProfile(user.uid, patch).catch((err) =>
+        console.error('Failed to sync member profile', err),
+      )
+    },
+    [user],
+  )
+
   return (
     <AuthContext.Provider
       value={{
@@ -143,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sendLink,
         confirmEmailAndSignIn,
         signOutUser,
+        updateProfile,
       }}
     >
       {children}

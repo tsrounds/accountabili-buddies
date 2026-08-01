@@ -121,7 +121,11 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
               />
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Avatar seed={entry.uid} size={28} alt={entry.firstName} />
+                  <Avatar
+                    seed={standings.find((s) => s.uid === entry.uid)?.avatarSeed ?? entry.uid}
+                    size={28}
+                    alt={entry.firstName}
+                  />
                   <p
                     className={`text-xs font-bold tracking-[0.2em] uppercase ${
                       entry.checkedIn ? 'text-steel' : 'text-papaya/70'

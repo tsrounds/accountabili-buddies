@@ -377,7 +377,7 @@ export default function ChallengeDetail() {
                 className="rounded-xl border-2 border-space/10 bg-white px-4 py-3 shadow-card"
               >
                 <div className="flex items-center gap-3">
-                  <Avatar seed={s.uid} size={44} alt={s.firstName} />
+                  <Avatar seed={s.avatarSeed ?? s.uid} size={44} alt={s.firstName} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
                       <p className="truncate font-bold text-space">

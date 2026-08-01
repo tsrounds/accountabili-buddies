@@ -105,6 +105,7 @@ export async function joinChallenge(
   input: {
     uid: string
     firstName: string
+    avatarSeed: string
     personalGoal: string
     targetFrequency: number
     frequencyPeriod: FrequencyPeriod
@@ -123,6 +124,28 @@ export async function joinChallenge(
       lastCheckinDate: '',
     },
     { merge: true },
+  )
+}
+
+/**
+ * Push profile edits (name, avatar) into every active challenge's member
+ * doc for this user, so leaderboards and roasts reflect the change without
+ * a re-join. Small friend group — one query, a handful of writes.
+ */
+export async function syncMemberProfile(
+  uid: string,
+  patch: { firstName?: string; avatarSeed?: string },
+): Promise<void> {
+  const snap = await getDocs(
+    query(collection(db, 'ab_challenges'), where('status', '==', 'active')),
+  )
+  await Promise.all(
+    snap.docs.map(async (c) => {
+      const memberRef = doc(db, 'ab_challenges', c.id, 'members', uid)
+      const memberSnap = await getDoc(memberRef)
+      if (!memberSnap.exists()) return
+      await updateDoc(memberRef, patch)
+    }),
   )
 }
 

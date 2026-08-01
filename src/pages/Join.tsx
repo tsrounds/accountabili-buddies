@@ -91,6 +91,7 @@ export default function Join() {
       await joinChallenge(challenge.id, {
         uid: user.uid,
         firstName: profile.firstName,
+        avatarSeed: profile.avatarSeed ?? user.uid,
         personalGoal: goal.trim(),
         targetFrequency: frequency,
         frequencyPeriod: period,
