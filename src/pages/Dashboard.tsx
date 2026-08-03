@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ArrowDown, ArrowUp, Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChallengeData } from '../hooks/useChallengeData'
+import { useMyChallenges } from '../hooks/useMyChallenges'
 import { checkInToday, getInviteCode, updateMemberProfile } from '../lib/challenges'
 import { formatDay } from '../lib/dates'
 import { getOrGenerateDispatch } from '../lib/dispatch'
@@ -353,15 +354,35 @@ function WeeklyDispatch({
 export default function Dashboard() {
   const { user, profile, signOutUser, completeProfile } = useAuth()
   const navigate = useNavigate()
-  const data = useChallengeData()
+  const {
+    loading: listLoading,
+    active: activeEntries,
+    completed: completedEntries,
+    archive: archiveChallenge,
+  } = useMyChallenges()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const rootRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
 
-  const { loading, challenge, member, members, checkins, standings, refresh } = data
+  // Default to the newest active challenge; keep the current pick if it's
+  // still around (e.g. after a refresh), otherwise fall back.
+  useEffect(() => {
+    if (listLoading) return
+    if (selectedId && activeEntries.some((e) => e.challenge.id === selectedId)) return
+    setSelectedId(activeEntries[0]?.challenge.id ?? null)
+  }, [listLoading, activeEntries, selectedId])
+
+  const data = useChallengeData(selectedId)
+  const { loading: challengeLoading, challenge, member, members, checkins, standings, refresh } = data
+  const loading = listLoading || (Boolean(selectedId) && challengeLoading)
   const me = standings.find((s) => s.uid === user?.uid)
   const challengeCardRef = useHoverLift({ scale: 1.02, y: -3 })
+
+  async function markChallengeDone(challengeId: string) {
+    await archiveChallenge(challengeId)
+  }
 
   async function saveProfile(patch: { firstName: string; avatarSeed: string }) {
     await completeProfile(patch)
@@ -416,8 +437,29 @@ export default function Dashboard() {
         <EmptyState isAdmin={Boolean(profile?.isAdmin)} />
       ) : (
         <div className="mx-auto max-w-lg px-5">
+          {/* ── Challenge switcher (only when in more than one) ──── */}
+          {activeEntries.length > 1 && (
+            <div data-animate className="mt-5 flex gap-2 overflow-x-auto pb-1">
+              {activeEntries.map(({ challenge: c }) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedId(c.id)}
+                  aria-pressed={c.id === selectedId}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold ${
+                    c.id === selectedId
+                      ? 'bg-space text-papaya'
+                      : 'bg-space/8 text-space/60 hover:bg-space/12 hover:text-space/80'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* ── Your status ─────────────────────────────── */}
-          <div data-animate className="relative mt-5">
+          <div data-animate className={activeEntries.length > 1 ? 'relative mt-3' : 'relative mt-5'}>
             <Link
               ref={challengeCardRef}
               to={`/challenge/${challenge.id}`}
@@ -550,6 +592,38 @@ export default function Dashboard() {
               standings={standings}
             />
           </div>
+        </div>
+      )}
+
+      {/* ── Completed challenges ─────────────────────── */}
+      {completedEntries.length > 0 && (
+        <div className="mx-auto max-w-lg px-5">
+          <section data-animate className={challenge && member ? 'mt-8' : 'mt-2'}>
+            <h3 className="font-display mb-3 text-xl tracking-wide uppercase text-lava">
+              Completed
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {completedEntries.map(({ challenge: c }) => (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border-2 border-space/10 bg-white px-4 py-3 shadow-card"
+                >
+                  <Link to={`/challenge/${c.id}`} className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-space">{c.name}</p>
+                    <p className="text-xs font-bold tracking-wide uppercase text-space/40">
+                      Completed
+                    </p>
+                  </Link>
+                  <button
+                    onClick={() => void markChallengeDone(c.id)}
+                    className="shrink-0 rounded-lg border-2 border-space/15 px-3 py-1.5 text-xs font-bold uppercase text-space/60 active:bg-space/5"
+                  >
+                    Mark done
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
       )}
 

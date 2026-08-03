@@ -33,6 +33,8 @@ export interface Member {
   targetFrequency: number
   frequencyPeriod: FrequencyPeriod
   joinedAt: Timestamp
+  /** This member has hidden a completed challenge from their own Home. */
+  archived?: boolean
 }
 
 export interface Checkin {

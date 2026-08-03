@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  findActiveChallengeFor,
-  listCheckins,
-  listMembers,
-} from '../lib/challenges'
+import { getChallenge, getMember, listCheckins, listMembers } from '../lib/challenges'
 import { computeStandings } from '../lib/stats'
 import type { Challenge, Checkin, Member } from '../lib/types'
 
@@ -17,10 +13,10 @@ interface ChallengeData {
   refresh: () => Promise<void>
 }
 
-/** Loads the user's active challenge plus everything derived from it. */
-export function useChallengeData(): ChallengeData & {
-  standings: ReturnType<typeof computeStandings>
-} {
+/** Loads one challenge (by id) plus everything derived from it. */
+export function useChallengeData(
+  challengeId: string | null,
+): ChallengeData & { standings: ReturnType<typeof computeStandings> } {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [challenge, setChallenge] = useState<Challenge | null>(null)
@@ -29,24 +25,30 @@ export function useChallengeData(): ChallengeData & {
   const [checkins, setCheckins] = useState<Checkin[]>([])
 
   const load = useCallback(async () => {
-    if (!user) return
-    const found = await findActiveChallengeFor(user.uid)
-    if (!found) {
+    if (!user || !challengeId) {
       setChallenge(null)
       setMember(null)
       setMembers([])
       setCheckins([])
       return
     }
-    setChallenge(found.challenge)
-    setMember(found.member)
-    const [m, c] = await Promise.all([
-      listMembers(found.challenge.id),
-      listCheckins(found.challenge.id),
+    const [c, mem] = await Promise.all([
+      getChallenge(challengeId),
+      getMember(challengeId, user.uid),
     ])
+    if (!c || !mem) {
+      setChallenge(null)
+      setMember(null)
+      setMembers([])
+      setCheckins([])
+      return
+    }
+    setChallenge(c)
+    setMember(mem)
+    const [m, c2] = await Promise.all([listMembers(challengeId), listCheckins(challengeId)])
     setMembers(m)
-    setCheckins(c)
-  }, [user])
+    setCheckins(c2)
+  }, [user, challengeId])
 
   useEffect(() => {
     let cancelled = false

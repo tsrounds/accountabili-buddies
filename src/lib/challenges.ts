@@ -266,26 +266,38 @@ export async function endChallenge(challengeId: string): Promise<void> {
   await updateDoc(doc(db, 'ab_challenges', challengeId), { status: 'complete' })
 }
 
-/** The newest active challenge this user belongs to (small group: few docs). */
-export async function findActiveChallengeFor(
+/** Hide (or restore) a completed challenge from this member's own Home. */
+export async function setChallengeArchived(
+  challengeId: string,
   uid: string,
-): Promise<{ challenge: Challenge; member: Member } | null> {
-  const snap = await getDocs(
-    query(
-      collection(db, 'ab_challenges'),
-      where('status', '==', 'active'),
-    ),
+  archived: boolean,
+): Promise<void> {
+  await setDoc(
+    doc(db, 'ab_challenges', challengeId, 'members', uid),
+    { archived },
+    { merge: true },
   )
+}
+
+/**
+ * Every challenge (active or complete) this user belongs to, newest first
+ * (small group: few docs, so an N+1 membership check per challenge is fine).
+ */
+export async function listMyChallenges(
+  uid: string,
+): Promise<{ challenge: Challenge; member: Member }[]> {
+  const snap = await getDocs(collection(db, 'ab_challenges'))
   const docs = snap.docs.sort((a, b) => {
     const aTime = a.data().createdAt?.toMillis?.() ?? 0
     const bTime = b.data().createdAt?.toMillis?.() ?? 0
     return bTime - aTime
   })
+  const results: { challenge: Challenge; member: Member }[] = []
   for (const d of docs) {
     const member = await getMember(d.id, uid)
     if (member) {
-      return { challenge: { id: d.id, ...d.data() } as Challenge, member }
+      results.push({ challenge: { id: d.id, ...d.data() } as Challenge, member })
     }
   }
-  return null
+  return results
 }
