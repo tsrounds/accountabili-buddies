@@ -1,12 +1,13 @@
-import { Style, Avatar } from '@dicebear/core'
-import definition from '@dicebear/styles/open-peeps.json' with { type: 'json' }
-
-// Built once — Style's constructor deep-clones + JSON-schema-validates the
-// definition, so do that exactly once and reuse the instance for every avatar.
-const style = new Style(definition)
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import Avatar from 'boring-avatars'
 
 /** Used when a legacy doc predates avatars, or profile is otherwise unset. */
 export const FALLBACK_AVATAR_SEED = 'buddy'
+
+const COLORS = ['#780000', '#C1121F', '#003049', '#FDF0D5', '#669BBC']
+const VARIANT = 'beam' as const
+const SIZE = 80
 
 export function randomAvatarSeed(): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 16)
@@ -19,7 +20,15 @@ const cache = new Map<string, string>()
 export function renderAvatarDataUri(seed: string): string {
   const cached = cache.get(seed)
   if (cached) return cached
-  const uri = new Avatar(style, { seed }).toDataUri()
+  const svg = renderToStaticMarkup(
+    createElement(Avatar, {
+      size: SIZE,
+      name: seed,
+      variant: VARIANT,
+      colors: COLORS,
+    }),
+  )
+  const uri = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
   cache.set(seed, uri)
   return uri
 }

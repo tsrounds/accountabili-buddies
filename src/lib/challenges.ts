@@ -248,6 +248,20 @@ export async function listAmmoForMember(
     )
 }
 
+/** Ammo entries authored by `byUid`. Powers the new-buddy nudge. */
+export async function listAmmoByAuthor(
+  challengeId: string,
+  byUid: string,
+): Promise<AmmoEntry[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'ab_challenges', challengeId, 'ammo'),
+      where('byUid', '==', byUid),
+    ),
+  )
+  return snap.docs.map((d) => d.data() as AmmoEntry)
+}
+
 export async function endChallenge(challengeId: string): Promise<void> {
   await updateDoc(doc(db, 'ab_challenges', challengeId), { status: 'complete' })
 }

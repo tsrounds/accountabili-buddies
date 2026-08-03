@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChallengeData } from '../hooks/useChallengeData'
 import { checkInToday, getInviteCode, updateMemberProfile } from '../lib/challenges'
+import { formatDay } from '../lib/dates'
 import { getOrGenerateDispatch } from '../lib/dispatch'
 import { frequencyLabel } from '../lib/stats'
 import { pageEnter, useHoverLift } from '../lib/motion'
@@ -14,6 +15,7 @@ import CheckInButton from '../components/CheckInButton'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
+import NewBuddyNudge from '../components/NewBuddyNudge'
 import ProfileModal from '../components/ProfileModal'
 import RoastsSection from '../components/RoastsSection'
 
@@ -176,8 +178,15 @@ function WeeklyDispatch({
   const heroRef = useHoverLift({ scale: 1.04, y: -2 })
   const slackerRef = useHoverLift({ scale: 1.04, y: -2 })
 
+  // Skip the whole recap when the challenge hasn't produced a full completed
+  // week yet — a "Week 0 recap" would be gibberish.
+  const challengeStart = challenge.startDate?.toDate?.()
+  const hasCompletedWeek = challengeStart
+    ? new Date().getTime() - challengeStart.getTime() >= 7 * 86_400_000
+    : false
+
   useEffect(() => {
-    if (state !== 'idle') return
+    if (!hasCompletedWeek) return
     let cancelled = false
     setState('working')
     getOrGenerateDispatch(challenge, members, checkins)
@@ -193,16 +202,21 @@ function WeeklyDispatch({
     return () => {
       cancelled = true
     }
-  }, [challenge, members, checkins, state])
+    // `state` deliberately excluded so setState('working') doesn't cancel our own fetch.
+  }, [challenge, members, checkins, hasCompletedWeek])
+
+  if (!hasCompletedWeek) return null
+
+  const weekLabel = dispatch?.weekNumber ? `Week ${dispatch.weekNumber} recap` : 'Last week'
 
   if (state === 'working' || state === 'idle') {
     return (
       <section className="mt-8">
         <h3 className="font-display mb-3 text-xl tracking-wide uppercase text-lava">
-          This week
+          {weekLabel}
         </h3>
         <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-space/10 bg-white px-6 py-6 shadow-card">
-          <p className="text-sm font-bold text-space/50">Loading this week's recap...</p>
+          <p className="text-sm font-bold text-space/50">Reading last week's tea leaves…</p>
         </div>
       </section>
     )
@@ -215,12 +229,16 @@ function WeeklyDispatch({
     standings.length > 0
       ? Math.round(standings.reduce((sum, s) => sum + s.completionPct, 0) / standings.length)
       : 0
+  const movers = (dispatch.rankChanges ?? []).slice(0, 3)
 
   return (
     <section className="mt-8">
-      <h3 className="font-display mb-3 text-xl tracking-wide uppercase text-lava">
-        This week
+      <h3 className="font-display mb-1 text-xl tracking-wide uppercase text-lava">
+        {weekLabel}
       </h3>
+      <p className="mb-3 text-xs font-bold tracking-[0.2em] uppercase text-space/50">
+        {formatDay(dispatch.weekStart)} → {formatDay(dispatch.weekEnd)}
+      </p>
 
       {/* Hero / Slacker */}
       <div className="grid grid-cols-2 gap-3">
@@ -234,7 +252,7 @@ function WeeklyDispatch({
           </p>
           <p className="mt-1 text-xs font-bold text-space/70">
             {dispatch.heroOfTheWeek.weekCheckins} check-in
-            {dispatch.heroOfTheWeek.weekCheckins === 1 ? '' : 's'} this week
+            {dispatch.heroOfTheWeek.weekCheckins === 1 ? '' : 's'} last week
           </p>
         </div>
         <div ref={slackerRef} className="rounded-2xl bg-brick p-4 text-papaya shadow-lifted">
@@ -251,6 +269,52 @@ function WeeklyDispatch({
           </p>
         </div>
       </div>
+
+      {/* Movers */}
+      {movers.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-[0.7rem] font-bold tracking-[0.25em] uppercase text-space/60">
+            Rank shuffle
+          </p>
+          <ul className="flex flex-col gap-2">
+            {movers.map((m) => {
+              const climbed = m.delta < 0
+              return (
+                <li
+                  key={m.uid}
+                  className="flex items-center gap-3 rounded-xl border-2 border-space/10 bg-white px-3.5 py-2.5 shadow-card"
+                >
+                  <span
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+                      climbed ? 'bg-steel/20 text-steel' : 'bg-brick/15 text-brick'
+                    }`}
+                  >
+                    {climbed ? (
+                      <ArrowUp className="h-4 w-4" aria-hidden />
+                    ) : (
+                      <ArrowDown className="h-4 w-4" aria-hidden />
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-space">{m.firstName}</p>
+                    <p className="text-[0.7rem] font-bold tracking-wide uppercase text-space/50">
+                      #{m.from} → #{m.to}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold tracking-wider uppercase ${
+                      climbed ? 'bg-steel/20 text-steel' : 'bg-brick text-papaya'
+                    }`}
+                  >
+                    {climbed ? '↑' : '↓'}
+                    {Math.abs(m.delta)}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Roast of the week */}
       {dispatch.roastOfTheWeek && (
@@ -443,6 +507,20 @@ export default function Dashboard() {
               <Mascot variant={0} size={92} className="mb-1 shrink-0" />
             </div>
           </section>
+
+          {/* ── New-buddy nudge ─────────────────────────── */}
+          {user && member && profile && (
+            <div data-animate>
+              <NewBuddyNudge
+                challengeId={challenge.id}
+                meUid={user.uid}
+                meFirstName={profile.firstName}
+                meJoinedAtMs={member.joinedAt?.toMillis?.() ?? 0}
+                members={members}
+                onAmmoAdded={() => void refresh()}
+              />
+            </div>
+          )}
 
           {/* ── Leaderboard ─────────────────────────────── */}
           <section data-animate className="mt-8">

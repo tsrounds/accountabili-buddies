@@ -72,6 +72,15 @@ export interface DispatchLeaderboardRow {
   weekCheckins: number
 }
 
+export interface RankChange {
+  uid: string
+  firstName: string
+  from: number
+  to: number
+  /** to - from. Positive = fell (rank got worse). Negative = climbed. */
+  delta: number
+}
+
 export interface DispatchDoc {
   challengeId: string
   challengeName: string
@@ -84,6 +93,10 @@ export interface DispatchDoc {
   heroOfTheWeek: { uid: string; firstName: string; weekCheckins: number }
   slackerOfTheWeek: { uid: string; firstName: string; weekCheckins: number }
   totalMembers: number
+  /** 1-based week counter since the challenge started. Missing on legacy docs. */
+  weekNumber?: number
+  /** Notable rank movers vs the prior recap. Missing on legacy docs and on the very first recap. */
+  rankChanges?: RankChange[]
 }
 
 export interface Invite {

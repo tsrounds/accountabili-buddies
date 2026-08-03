@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, Check, Plus, SkipForward } from 'lucide-react'
+import { ArrowRight, Plus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   getChallenge,
@@ -18,6 +18,7 @@ import TopBar from '../components/TopBar'
 import Mascot from '../components/Mascot'
 import LoadingScreen from '../components/LoadingScreen'
 import AvatarBuilder from '../components/AvatarBuilder'
+import AmmoQuestionRunner from '../components/AmmoQuestionRunner'
 
 type Phase =
   | { phase: 'loading' }
@@ -644,64 +645,26 @@ function AmmoPhase({
 
       <div ref={bodyRef}>
         {streaming ? (
-          <form
+          <AmmoQuestionRunner
+            prompt={prompt}
+            avatarSeed={members.find((m) => m.uid === prompt.participant.uid)?.avatarSeed ?? ''}
+            answer={answer}
+            onAnswerChange={setAnswer}
             onSubmit={handleAnswer}
-            className="rounded-2xl border-2 border-space/10 bg-white p-4 shadow-card"
-          >
-            <div className="flex items-center gap-3">
-              <img
-                src={avatarFor(prompt.participant.uid)}
-                width={48}
-                height={48}
-                alt=""
-                className="h-12 w-12 shrink-0 rounded-full bg-papaya"
-                draggable={false}
-              />
-              <div>
-                <p className="text-xs font-bold tracking-wide uppercase text-space/50">
-                  About {prompt.participant.firstName}
-                </p>
-                <p className="font-display text-lg leading-tight text-space">
-                  {prompt.question}
-                </p>
-              </div>
-            </div>
-            <textarea
-              autoFocus
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              maxLength={280}
-              rows={3}
-              placeholder="Be specific. Names, dates, quotes."
-              className="mt-3 w-full resize-none rounded-xl border-2 border-space/15 bg-papaya/40 px-4 py-3 text-base text-space placeholder:text-space/30 focus:border-steel"
-            />
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="flex items-center gap-1.5 rounded-xl bg-space/8 px-4 py-2.5 text-sm font-bold text-space/70"
-              >
-                <SkipForward className="h-4 w-4" aria-hidden /> Skip
-              </button>
-              <button
-                type="submit"
-                disabled={!answer.trim() || submitting}
-                className="font-display flex flex-1 items-center justify-center gap-2 rounded-xl bg-brick px-4 py-3 tracking-wide uppercase text-papaya shadow-lifted active:bg-lava disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" aria-hidden />
-                {submitting ? 'Filing…' : 'Submit'}
-              </button>
-            </div>
-            {answered >= MIN_AMMO_ANSWERS && (
-              <button
-                type="button"
-                onClick={goToReview}
-                className="mt-2 text-xs font-bold text-space/50 underline underline-offset-4"
-              >
-                Done — back to the crew
-              </button>
-            )}
-          </form>
+            onSkip={handleSkip}
+            submitting={submitting}
+            footer={
+              answered >= MIN_AMMO_ANSWERS ? (
+                <button
+                  type="button"
+                  onClick={goToReview}
+                  className="mt-2 text-xs font-bold text-space/50 underline underline-offset-4"
+                >
+                  Done — back to the crew
+                </button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="flex flex-col gap-4">
             <p className="text-center text-sm text-space/60">

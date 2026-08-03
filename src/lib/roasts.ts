@@ -9,7 +9,13 @@ import {
   fallbackRoasts,
   type RoastMemberInput,
 } from './roastPrompt'
-import type { Challenge, MemberStanding, RoastDoc, RoastEntry } from './types'
+import type {
+  Challenge,
+  MemberStanding,
+  RankChange,
+  RoastDoc,
+  RoastEntry,
+} from './types'
 
 const GOSSIP_SAMPLE_SIZE = 3
 
@@ -93,14 +99,24 @@ export async function getOrGenerateDailyRoasts(
 /** Paragraph-length dramatic recap for the weekly dispatch. */
 export async function generateWeeklyRoast(input: {
   challengeName: string
+  weekNumber: number
   weekStart: string
   weekEnd: string
   rows: { firstName: string; weekCheckins: number; totalCheckins: number }[]
   hero: string
   slacker: string
+  rankChanges: RankChange[]
   recentRoasts: string[]
 }): Promise<string> {
-  const fallback = `Another week in "${input.challengeName}" is in the books. ${input.hero} carried the team with a suspicious amount of enthusiasm, while ${input.slacker} treated the check-in button like it owed them money. Everyone else hovered comfortably in the mediocre middle, which the mascot notes is exactly where mediocre people hover.`
+  const climber = input.rankChanges.find((c) => c.delta < 0)
+  const faller = input.rankChanges.find((c) => c.delta > 0)
+  const moverLine =
+    climber || faller
+      ? ` ${climber ? `${climber.firstName} climbed from #${climber.from} to #${climber.to}. ` : ''}${
+          faller ? `${faller.firstName} slid from #${faller.from} to #${faller.to}.` : ''
+        }`.trim()
+      : ''
+  const fallback = `Week ${input.weekNumber} of "${input.challengeName}" is in the books. ${input.hero} carried the team with a suspicious amount of enthusiasm, while ${input.slacker} treated the check-in button like it owed them money.${moverLine ? ' ' + moverLine : ''} Everyone else hovered comfortably in the mediocre middle, which the mascot notes is exactly where mediocre people hover.`
 
   const client = await getClient()
   if (!client) return fallback
@@ -108,18 +124,22 @@ export async function generateWeeklyRoast(input: {
     const response = await client.messages.create({
       model: ROAST_MODEL,
       max_tokens: 600,
-      system: `You write the "Roast of the Week" column for Accountabili-Buddies, a friend-group accountability app. Voice: deadpan, passive-aggressive sports-desk correspondent filing a report nobody asked for. One single paragraph, 3-5 sentences, no headings, no lists, no markdown. Dramatize the week's highlights and lowlights. Funny, never cruel.`,
+      system: `You write the "Roast of the Week" column for Accountabili-Buddies, a friend-group accountability app. Voice: deadpan, passive-aggressive sports-desk correspondent filing a report nobody asked for. One single paragraph, 3-5 sentences, no headings, no lists, no markdown. Dramatize the week's highlights and lowlights. Funny, never cruel. If rank movement is provided, name the biggest climber and biggest faller by first name — this is the whole point of a weekly recap.`,
       messages: [
         {
           role: 'user',
-          content: `Write this week's roast recap.
+          content: `Write the Week ${input.weekNumber} roast recap.
 
-Challenge: "${input.challengeName}" (week ${input.weekStart} → ${input.weekEnd})
+Challenge: "${input.challengeName}"
+Week window: ${input.weekStart} → ${input.weekEnd}
 Hero of the week: ${input.hero}
 Slacker of the week: ${input.slacker}
 
 Weekly numbers:
 ${JSON.stringify(input.rows, null, 2)}
+
+Rank movement vs previous week (empty = first recap, skip movement talk):
+${JSON.stringify(input.rankChanges, null, 2)}
 
 A sample of this week's daily roasts, for continuity of grudges:
 ${input.recentRoasts.slice(0, 12).join('\n')}

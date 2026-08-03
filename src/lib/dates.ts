@@ -42,6 +42,28 @@ export function weekRange(d: Date = new Date()): { start: Date; end: Date } {
   return { start: monday, end: sunday }
 }
 
+/** Monday→Sunday of the week PRIOR to `d`. Used by the weekly recap. */
+export function previousWeekRange(d: Date = new Date()): { start: Date; end: Date } {
+  return weekRange(addDays(d, -7))
+}
+
+/** ISO week id for the week PRIOR to `d`. */
+export function previousIsoWeekId(d: Date = new Date()): string {
+  return isoWeekId(addDays(d, -7))
+}
+
+/**
+ * 1-based week number since the challenge began.
+ * Week 1 = the first Monday–Sunday that fully falls at or after `start`.
+ * `when` is typically the last day of the week being recapped (Sunday).
+ */
+export function weekNumberSinceStart(start: Date, when: Date = new Date()): number {
+  const startMid = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+  const whenMid = new Date(when.getFullYear(), when.getMonth(), when.getDate())
+  const days = Math.floor((whenMid.getTime() - startMid.getTime()) / 86_400_000)
+  return Math.max(1, Math.floor(days / 7) + 1)
+}
+
 export function formatDay(key: string): string {
   const [y, m, d] = key.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString(undefined, {
