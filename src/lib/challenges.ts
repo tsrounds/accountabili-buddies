@@ -292,12 +292,9 @@ export async function listMyChallenges(
     const bTime = b.data().createdAt?.toMillis?.() ?? 0
     return bTime - aTime
   })
-  const results: { challenge: Challenge; member: Member }[] = []
-  for (const d of docs) {
-    const member = await getMember(d.id, uid)
-    if (member) {
-      results.push({ challenge: { id: d.id, ...d.data() } as Challenge, member })
-    }
-  }
-  return results
+  const members = await Promise.all(docs.map((d) => getMember(d.id, uid)))
+  return docs.flatMap((d, i) => {
+    const member = members[i]
+    return member ? [{ challenge: { id: d.id, ...d.data() } as Challenge, member }] : []
+  })
 }

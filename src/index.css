@@ -96,6 +96,13 @@ button {
   }
 }
 
+/* Runs on the compositor so it stays smooth even while JS is busy parsing
+   the bundle / running Firestore's first handshake. */
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
 ::selection {
   background: var(--color-steel);
   color: var(--color-space);

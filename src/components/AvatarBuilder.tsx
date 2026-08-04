@@ -15,6 +15,28 @@ const DEFAULT_SIZE = 132
 const POOL_SIZE = 18
 const SPIN_DURATION = 900
 
+// Idle button copy, keyed by how many times the user has already rolled.
+// Once the scripted lines run out, it cycles through the last few as a
+// running joke about indecision.
+const ROLL_LABELS = [
+  'Choose your destiny',
+  'Re-choose',
+  'Again?',
+  "Wow, you don't like any?",
+  "It's gonna be this one",
+  'No take-backs after this',
+  'The mascot is judging you',
+  'Fine. Final answer.',
+  'One more, we promise',
+  'This is becoming a bit',
+]
+
+function rollLabel(count: number): string {
+  if (count < ROLL_LABELS.length) return ROLL_LABELS[count]
+  const pool = ROLL_LABELS.slice(4)
+  return pool[(count - ROLL_LABELS.length) % pool.length]
+}
+
 // Decelerating ease (matches the outExpo feel used elsewhere): fast start,
 // slow settle. animejs v4 won't tween a plain JS object, so the reel runs on
 // a hand-rolled rAF loop and animejs only handles the final DOM bounce.
@@ -30,6 +52,7 @@ function easeOutExpo(t: number): number {
 export default function AvatarBuilder({ seed, onChange, size = DEFAULT_SIZE }: AvatarBuilderProps) {
   const [displaySeed, setDisplaySeed] = useState(seed)
   const [spinning, setSpinning] = useState(false)
+  const [rollCount, setRollCount] = useState(0)
   const wrapRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
 
@@ -63,6 +86,7 @@ export default function AvatarBuilder({ seed, onChange, size = DEFAULT_SIZE }: A
 
   function spin() {
     if (spinning) return
+    setRollCount((n) => n + 1)
     // Pre-generate the whole pool + prime the render cache synchronously.
     // Cheap for open-peeps, and keeps the animation frame loop pure indexing.
     const pool = Array.from({ length: POOL_SIZE }, () => randomAvatarSeed())
@@ -115,11 +139,11 @@ export default function AvatarBuilder({ seed, onChange, size = DEFAULT_SIZE }: A
           type="button"
           onClick={spin}
           disabled={spinning}
-          aria-label="Roll a new avatar"
+          aria-label="Choose a new avatar"
           className="font-display flex items-center gap-2 rounded-xl bg-space px-5 py-3 tracking-wide uppercase text-papaya shadow-lifted transition-colors active:bg-lava disabled:opacity-60"
         >
           <Dices className="h-5 w-5" aria-hidden />
-          {spinning ? 'Rolling…' : 'Roll again'}
+          {spinning ? 'Rolling…' : rollLabel(rollCount)}
         </button>
         <p className="text-xs leading-snug text-space/50">
           Keep rolling until they look like your kind of trouble.

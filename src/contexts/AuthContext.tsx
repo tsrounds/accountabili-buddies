@@ -23,7 +23,6 @@ import type { UserProfile } from '../lib/types'
 
 const PENDING_EMAIL_KEY = 'ab_pendingEmail'
 const PENDING_NAME_KEY = 'ab_pendingFirstName'
-const PENDING_AVATAR_KEY = 'ab_pendingAvatarSeed'
 
 interface AuthContextValue {
   user: User | null
@@ -33,7 +32,9 @@ interface AuthContextValue {
   completingSignIn: boolean
   /** Set when the link was opened on a device without the stored email. */
   needsEmailConfirm: boolean
-  sendLink: (email: string, firstName: string, avatarSeed: string) => Promise<void>
+  /** Set once, right after a brand-new account is created — cleared by completeProfile. */
+  needsAvatar: boolean
+  sendLink: (email: string, firstName: string) => Promise<void>
   confirmEmailAndSignIn: (email: string) => Promise<void>
   /** Sign the visitor in anonymously if they aren't already signed in. */
   signInAnon: () => Promise<void>
@@ -44,20 +45,19 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-async function ensureUserDoc(user: User): Promise<UserProfile> {
+async function ensureUserDoc(user: User): Promise<{ profile: UserProfile; created: boolean }> {
   const ref = doc(db, 'ab_users', user.uid)
   const snap = await getDoc(ref)
   if (snap.exists()) {
     // Legacy docs may predate avatarSeed — coalesce so consumers never see undefined.
     const data = snap.data() as Partial<UserProfile>
-    return { avatarSeed: FALLBACK_AVATAR_SEED, ...data } as UserProfile
+    return { profile: { avatarSeed: FALLBACK_AVATAR_SEED, ...data } as UserProfile, created: false }
   }
 
   const email = user.email ?? ''
   const firstName =
     localStorage.getItem(PENDING_NAME_KEY) || email.split('@')[0] || 'Buddy'
-  const avatarSeed =
-    localStorage.getItem(PENDING_AVATAR_KEY) || randomAvatarSeed()
+  const avatarSeed = randomAvatarSeed()
   const data = {
     uid: user.uid,
     email,
@@ -68,8 +68,7 @@ async function ensureUserDoc(user: User): Promise<UserProfile> {
   }
   await setDoc(ref, data)
   localStorage.removeItem(PENDING_NAME_KEY)
-  localStorage.removeItem(PENDING_AVATAR_KEY)
-  return (await getDoc(ref)).data() as UserProfile
+  return { profile: (await getDoc(ref)).data() as UserProfile, created: true }
 }
 
 // Module-level so React 18 StrictMode's double-mounted effect can't consume
@@ -84,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSignInWithEmailLink(auth, window.location.href),
   )
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false)
+  const [needsAvatar, setNeedsAvatar] = useState(false)
 
   const finishLink = useCallback(async (email: string) => {
     try {
@@ -116,7 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u)
       if (u) {
         try {
-          setProfile(await ensureUserDoc(u))
+          const { profile: p, created } = await ensureUserDoc(u)
+          setProfile(p)
+          setNeedsAvatar(created)
         } catch (err) {
           console.error('Failed to load profile', err)
           setProfile(null)
@@ -128,18 +130,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const sendLink = useCallback(
-    async (email: string, firstName: string, avatarSeed: string) => {
-      localStorage.setItem(PENDING_EMAIL_KEY, email)
-      localStorage.setItem(PENDING_NAME_KEY, firstName)
-      localStorage.setItem(PENDING_AVATAR_KEY, avatarSeed)
-      await sendSignInLinkToEmail(auth, email, {
-        url: `${window.location.origin}/login`,
-        handleCodeInApp: true,
-      })
-    },
-    [],
-  )
+  const sendLink = useCallback(async (email: string, firstName: string) => {
+    localStorage.setItem(PENDING_EMAIL_KEY, email)
+    localStorage.setItem(PENDING_NAME_KEY, firstName)
+    await sendSignInLinkToEmail(auth, email, {
+      url: `${window.location.origin}/login`,
+      handleCodeInApp: true,
+    })
+  }, [])
 
   const signInAnon = useCallback(async () => {
     // Idempotent — no-op if already signed in (real or anonymous).
@@ -157,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // locally too — otherwise anything reading profile.firstName after this
       // (Dashboard greeting, check-in writes) sees the pre-completion stub.
       setProfile((prev) => (prev ? { ...prev, ...patch } : prev))
+      setNeedsAvatar(false)
     },
     [],
   )
@@ -179,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         completingSignIn,
         needsEmailConfirm,
+        needsAvatar,
         sendLink,
         confirmEmailAndSignIn,
         signInAnon,

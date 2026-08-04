@@ -9,22 +9,26 @@ import AvatarBuilder from '../components/AvatarBuilder'
 import { prefersReducedMotion } from '../lib/motion'
 import { randomAvatarSeed } from '../lib/avatar'
 
-type Phase = 'identity' | 'form' | 'sending' | 'sent'
+type Phase = 'name' | 'email' | 'sending' | 'sent'
 
 export default function Login() {
   const {
     user,
+    profile,
     loading,
     completingSignIn,
     needsEmailConfirm,
+    needsAvatar,
     sendLink,
     confirmEmailAndSignIn,
+    completeProfile,
   } = useAuth()
-  const [phase, setPhase] = useState<Phase>(needsEmailConfirm ? 'form' : 'identity')
+  const [phase, setPhase] = useState<Phase>(needsEmailConfirm ? 'email' : 'name')
   const [firstName, setFirstName] = useState('')
   const [avatarSeed, setAvatarSeed] = useState(() => randomAvatarSeed())
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [avatarBusy, setAvatarBusy] = useState(false)
   const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -61,7 +65,6 @@ export default function Login() {
   }, [loading, completingSignIn, user, phase, needsEmailConfirm])
 
   if (loading || completingSignIn) return <LoadingScreen message="Verifying your link…" />
-  if (user) return <Navigate to="/" replace />
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -78,18 +81,62 @@ export default function Login() {
     if (!firstName.trim() || !cleanEmail) return
     setPhase('sending')
     try {
-      await sendLink(cleanEmail, firstName.trim(), avatarSeed)
+      await sendLink(cleanEmail, firstName.trim())
       setPhase('sent')
     } catch (err) {
       console.error(err)
       setError('Couldn’t send the link. Check the email and try again.')
-      setPhase('form')
+      setPhase('email')
       const form = rootRef.current?.querySelector('[data-animate="form"]')
       if (form && !prefersReducedMotion()) {
         animate(form, { translateX: [0, -8, 8, -5, 5, 0], duration: 320, ease: 'outQuad' })
       }
     }
   }
+
+  async function handleAvatarConfirm() {
+    if (avatarBusy) return
+    setAvatarBusy(true)
+    setError('')
+    try {
+      await completeProfile({ firstName: profile?.firstName ?? firstName.trim(), avatarSeed })
+    } catch (err) {
+      console.error(err)
+      setError('Couldn’t save that. Try again.')
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
+  if (user && needsAvatar) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 pt-safe pb-safe">
+        <div className="mb-2">
+          <Mascot variant={0} float size={190} />
+        </div>
+        <h1 className="font-display text-center text-[2.6rem] leading-[0.95] uppercase text-space">
+          Choose your
+          <br />
+          <span className="text-brick">Avatar</span>
+        </h1>
+        <div className="mt-6 flex w-full max-w-sm flex-col gap-4">
+          <AvatarBuilder seed={avatarSeed} onChange={setAvatarSeed} />
+          {error && <p className="text-sm font-bold text-brick">{error}</p>}
+          <button
+            type="button"
+            onClick={handleAvatarConfirm}
+            disabled={avatarBusy}
+            className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-brick px-6 py-4 font-display text-lg tracking-wide uppercase text-papaya shadow-lifted transition-colors active:bg-lava disabled:opacity-60"
+          >
+            {avatarBusy ? 'Saving…' : "Let's go"}
+            <ArrowRight className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  if (user) return <Navigate to="/" replace />
 
   return (
     <main
@@ -121,14 +168,13 @@ export default function Login() {
           </div>
           <button
             className="mt-4 text-sm font-bold text-steel underline underline-offset-4"
-            onClick={() => setPhase('identity')}
+            onClick={() => setPhase('name')}
           >
             Wrong email? Start over
           </button>
         </div>
-      ) : phase === 'identity' && !needsEmailConfirm ? (
+      ) : phase === 'name' && !needsEmailConfirm ? (
         <div data-animate="form" className="mt-6 flex w-full max-w-sm flex-col gap-4">
-          <AvatarBuilder seed={avatarSeed} onChange={setAvatarSeed} />
           <label className="flex flex-col gap-1">
             <span className="text-xs font-bold tracking-wide uppercase text-space/60">
               First name
@@ -146,7 +192,7 @@ export default function Login() {
           <button
             data-animate="cta"
             type="button"
-            onClick={() => setPhase('form')}
+            onClick={() => setPhase('email')}
             disabled={!firstName.trim()}
             className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-brick px-6 py-4 font-display text-lg tracking-wide uppercase text-papaya shadow-lifted transition-colors active:bg-lava disabled:opacity-60"
           >
@@ -185,7 +231,7 @@ export default function Login() {
             {!needsEmailConfirm && (
               <button
                 type="button"
-                onClick={() => setPhase('identity')}
+                onClick={() => setPhase('name')}
                 className="rounded-xl bg-space/8 px-4 py-4 text-sm font-bold text-space/70"
               >
                 Back

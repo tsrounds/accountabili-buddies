@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDVAbxj3ZXfp5feOMvxgIKOnEmEI783lMg',
@@ -15,6 +15,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+// Auto-detect long-polling — WebChannel streaming stalls for 20-30s on many
+// mobile carriers and iOS Safari before falling back on its own. This makes
+// Firestore skip the broken handshake when the environment can't stream.
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+})
 
 export default app
