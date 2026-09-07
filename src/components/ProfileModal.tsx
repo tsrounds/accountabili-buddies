@@ -1,11 +1,13 @@
-import { useState, type FormEvent } from 'react'
-import { LogOut, X } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Bell, BellOff, LogOut, X } from 'lucide-react'
 import AvatarBuilder from './AvatarBuilder'
+import type { PermissionResult } from '../lib/notifications'
 
 interface ProfileModalProps {
   firstName: string
   avatarSeed: string
   onSave: (patch: { firstName: string; avatarSeed: string }) => Promise<void>
+  onEnableNotifications: () => Promise<PermissionResult>
   onSignOut: () => void
   onClose: () => void
 }
@@ -15,6 +17,7 @@ export default function ProfileModal({
   firstName,
   avatarSeed,
   onSave,
+  onEnableNotifications,
   onSignOut,
   onClose,
 }: ProfileModalProps) {
@@ -85,6 +88,8 @@ export default function ProfileModal({
           </button>
         </form>
 
+        <NotificationsSection onEnable={onEnableNotifications} />
+
         <button
           onClick={onSignOut}
           className="mt-4 flex w-full items-center justify-center gap-2 py-2 text-sm font-bold text-space/50 active:text-space"
@@ -93,6 +98,114 @@ export default function ProfileModal({
           Sign out
         </button>
       </div>
+    </div>
+  )
+}
+
+function NotificationsSection({
+  onEnable,
+}: {
+  onEnable: () => Promise<PermissionResult>
+}) {
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(
+    () =>
+      typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+  )
+  const [isStandalone, setIsStandalone] = useState(false)
+  const [enabling, setEnabling] = useState(false)
+
+  useEffect(() => {
+    // iOS Safari 16.4+ only delivers push to the installed PWA. Both checks
+    // matter — matchMedia covers Android/desktop, navigator.standalone is
+    // iOS's own legacy signal.
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true
+    setIsStandalone(standalone)
+  }, [])
+
+  async function handleClick() {
+    setEnabling(true)
+    try {
+      const result = await onEnable()
+      setPermission(result === 'unsupported' ? 'unsupported' : result)
+    } finally {
+      setEnabling(false)
+    }
+  }
+
+  if (!isStandalone) {
+    return (
+      <div className="mt-6 rounded-xl border-2 border-space/10 bg-white/60 p-4">
+        <div className="flex items-center gap-2 text-space">
+          <Bell className="h-4 w-4" aria-hidden />
+          <span className="text-sm font-bold">Push notifications</span>
+        </div>
+        <p className="mt-2 text-sm text-space/70">
+          Install Buddies to your home screen first — iOS only delivers pushes
+          to installed apps.
+        </p>
+        <ol className="mt-2 list-decimal pl-5 text-sm text-space/70">
+          <li>Tap the Share button in Safari.</li>
+          <li>Choose "Add to Home Screen".</li>
+          <li>Open Buddies from your home screen.</li>
+        </ol>
+      </div>
+    )
+  }
+
+  if (permission === 'granted') {
+    return (
+      <div className="mt-6 flex items-center gap-2 rounded-xl border-2 border-space/10 bg-white/60 p-4 text-sm text-space">
+        <Bell className="h-4 w-4" aria-hidden />
+        <span className="font-bold">Notifications on.</span>
+        <span className="text-space/60">The mascot has your number.</span>
+      </div>
+    )
+  }
+
+  if (permission === 'denied') {
+    return (
+      <div className="mt-6 rounded-xl border-2 border-space/10 bg-white/60 p-4">
+        <div className="flex items-center gap-2 text-space">
+          <BellOff className="h-4 w-4" aria-hidden />
+          <span className="text-sm font-bold">Notifications blocked.</span>
+        </div>
+        <p className="mt-2 text-sm text-space/70">
+          Re-enable in iOS Settings → Notifications → Buddies. iOS won't ask
+          again from here.
+        </p>
+      </div>
+    )
+  }
+
+  if (permission === 'unsupported') {
+    return (
+      <div className="mt-6 flex items-center gap-2 rounded-xl border-2 border-space/10 bg-white/60 p-4 text-sm text-space/70">
+        <BellOff className="h-4 w-4" aria-hidden />
+        <span>Push isn't available on this browser.</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-space/10 bg-white/60 p-4">
+      <div className="flex items-center gap-2 text-space">
+        <Bell className="h-4 w-4" aria-hidden />
+        <span className="text-sm font-bold">Push notifications</span>
+      </div>
+      <p className="mt-2 text-sm text-space/70">
+        Let the mascot yell at you when you skip a check-in. iOS only asks
+        once — don't fumble the tap.
+      </p>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={enabling}
+        className="font-display mt-3 w-full rounded-xl bg-space py-3 text-sm tracking-wide uppercase text-papaya shadow-lifted active:bg-space/80 disabled:opacity-50"
+      >
+        {enabling ? 'Asking…' : 'Enable notifications'}
+      </button>
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { getOrGenerateDispatch } from '../lib/dispatch'
 import { frequencyLabel } from '../lib/stats'
 import { pageEnter, useHoverLift } from '../lib/motion'
 import { renderAvatarDataUri } from '../lib/avatar'
+import { requestNotificationPermission } from '../lib/notifications'
 import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
 import CheckInButton from '../components/CheckInButton'
@@ -632,6 +633,10 @@ export default function Dashboard() {
           firstName={profile?.firstName ?? ''}
           avatarSeed={profile?.avatarSeed ?? ''}
           onSave={saveProfile}
+          onEnableNotifications={async () => {
+            if (!user) return 'unsupported'
+            return requestNotificationPermission(user.uid)
+          }}
           onSignOut={() => void signOutUser()}
           onClose={() => setShowProfile(false)}
         />
