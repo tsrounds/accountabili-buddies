@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { animate, createTimeline } from 'animejs'
-import { ArrowRight, Send, MailCheck } from 'lucide-react'
+import { ArrowRight, ClipboardPaste, Send, MailCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import Mascot from '../components/Mascot'
 import LoadingScreen from '../components/LoadingScreen'
@@ -11,6 +11,17 @@ import { randomAvatarSeed } from '../lib/avatar'
 
 type Phase = 'name' | 'email' | 'sending' | 'sent'
 
+// iOS Mail always opens URLs in Safari, and Safari's storage is isolated from
+// the installed PWA, so a magic link tapped from the inbox never signs the PWA
+// in. Detect the PWA context so we can offer a paste-the-link fallback.
+function detectStandalone(): boolean {
+  if (typeof window === 'undefined') return false
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+  )
+}
+
 export default function Login() {
   const {
     user,
@@ -19,16 +30,28 @@ export default function Login() {
     completingSignIn,
     needsEmailConfirm,
     needsAvatar,
+    pendingEmail,
     sendLink,
     confirmEmailAndSignIn,
+    completeSignInWithPastedUrl,
     completeProfile,
   } = useAuth()
-  const [phase, setPhase] = useState<Phase>(needsEmailConfirm ? 'email' : 'name')
+  const isStandalone = useRef(detectStandalone()).current
+  const [phase, setPhase] = useState<Phase>(() => {
+    if (needsEmailConfirm) return 'email'
+    // PWA restart after "check your email" — jump straight to the paste UI
+    // instead of making the user re-enter their name and email.
+    if (isStandalone && pendingEmail) return 'sent'
+    return 'name'
+  })
   const [firstName, setFirstName] = useState('')
   const [avatarSeed, setAvatarSeed] = useState(() => randomAvatarSeed())
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(pendingEmail ?? '')
   const [error, setError] = useState('')
   const [avatarBusy, setAvatarBusy] = useState(false)
+  const [pastedUrl, setPastedUrl] = useState('')
+  const [pasting, setPasting] = useState(false)
+  const [pasteError, setPasteError] = useState('')
   const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -91,6 +114,27 @@ export default function Login() {
       if (form && !prefersReducedMotion()) {
         animate(form, { translateX: [0, -8, 8, -5, 5, 0], duration: 320, ease: 'outQuad' })
       }
+    }
+  }
+
+  async function handlePaste(e: FormEvent) {
+    e.preventDefault()
+    setPasteError('')
+    if (!pastedUrl.trim() || pasting) return
+    setPasting(true)
+    try {
+      await completeSignInWithPastedUrl(pastedUrl)
+    } catch (err) {
+      const code = err instanceof Error ? err.message : ''
+      setPasteError(
+        code === 'not-a-sign-in-link'
+          ? "That doesn't look like the sign-in link. Copy the full URL from the email."
+          : code === 'no-pending-email'
+            ? 'Send yourself a link first, then paste it here.'
+            : 'Sign-in failed. The link may have expired — send a new one.',
+      )
+    } finally {
+      setPasting(false)
     }
   }
 
@@ -162,13 +206,52 @@ export default function Login() {
             <MailCheck className="mx-auto mb-3 h-8 w-8 text-steel" aria-hidden />
             <h2 className="font-display text-2xl uppercase">Check your email</h2>
             <p className="mt-2 text-sm text-papaya/80">
-              A magic link is on its way to <strong>{email}</strong>. Tap it on this
-              phone and you’re in. The mascot will wait. Reluctantly.
+              A magic link is on its way to{' '}
+              <strong>{email || pendingEmail}</strong>.
+              {isStandalone
+                ? ' iOS opens the link in Safari, so paste it back in here to sign the app in.'
+                : ' Tap it on this phone and you’re in. The mascot will wait. Reluctantly.'}
             </p>
           </div>
+
+          {isStandalone && (
+            <form
+              onSubmit={handlePaste}
+              className="mt-4 flex flex-col gap-3 text-left"
+            >
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold tracking-wide uppercase text-space/60">
+                  Paste the link from the email
+                </span>
+                <textarea
+                  value={pastedUrl}
+                  onChange={(e) => setPastedUrl(e.target.value)}
+                  placeholder="https://accountabili-buddies.firebaseapp.com/__/auth/action?…"
+                  rows={3}
+                  className="rounded-xl border-2 border-space/15 bg-white px-4 py-3 text-xs break-all text-space placeholder:text-space/30 focus:border-steel"
+                />
+              </label>
+              {pasteError && (
+                <p className="text-sm font-bold text-brick">{pasteError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={!pastedUrl.trim() || pasting}
+                className="font-display flex items-center justify-center gap-2 rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava disabled:opacity-50"
+              >
+                <ClipboardPaste className="h-5 w-5" aria-hidden />
+                {pasting ? 'Signing in…' : 'Sign me in'}
+              </button>
+            </form>
+          )}
+
           <button
             className="mt-4 text-sm font-bold text-steel underline underline-offset-4"
-            onClick={() => setPhase('name')}
+            onClick={() => {
+              setPhase('name')
+              setPastedUrl('')
+              setPasteError('')
+            }}
           >
             Wrong email? Start over
           </button>

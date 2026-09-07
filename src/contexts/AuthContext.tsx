@@ -34,8 +34,16 @@ interface AuthContextValue {
   needsEmailConfirm: boolean
   /** Set once, right after a brand-new account is created — cleared by completeProfile. */
   needsAvatar: boolean
+  /** Address the last sign-in link was sent to on this device; null once completed. */
+  pendingEmail: string | null
   sendLink: (email: string, firstName: string) => Promise<void>
   confirmEmailAndSignIn: (email: string) => Promise<void>
+  /**
+   * Complete sign-in from a URL the user pasted (iOS PWA workaround: Mail.app
+   * opens the link in Safari, so we let them copy the URL and hand it to the
+   * PWA directly instead).
+   */
+  completeSignInWithPastedUrl: (url: string) => Promise<void>
   /** Sign the visitor in anonymously if they aren't already signed in. */
   signInAnon: () => Promise<void>
   /** Fill in name/avatar on the current profile (Firestore + local state). */
@@ -84,14 +92,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false)
   const [needsAvatar, setNeedsAvatar] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : localStorage.getItem(PENDING_EMAIL_KEY),
+  )
 
-  const finishLink = useCallback(async (email: string) => {
+  const finishLink = useCallback(async (email: string, urlOverride?: string) => {
+    const url = urlOverride ?? window.location.href
     try {
-      await signInWithEmailLink(auth, email, window.location.href)
+      await signInWithEmailLink(auth, email, url)
       localStorage.removeItem(PENDING_EMAIL_KEY)
+      setPendingEmail(null)
       setNeedsEmailConfirm(false)
-      // Strip the oobCode etc. from the URL.
-      window.history.replaceState(null, '', window.location.pathname)
+      // Only scrub the address bar when the code was actually in it —
+      // pasted-URL sign-in from the PWA leaves the app URL untouched.
+      if (!urlOverride) {
+        window.history.replaceState(null, '', window.location.pathname)
+      }
     } finally {
       setCompletingSignIn(false)
     }
@@ -137,7 +153,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       url: `${window.location.origin}/login`,
       handleCodeInApp: true,
     })
+    setPendingEmail(email)
   }, [])
+
+  const completeSignInWithPastedUrl = useCallback(
+    async (url: string) => {
+      const trimmed = url.trim()
+      if (!isSignInWithEmailLink(auth, trimmed)) {
+        throw new Error('not-a-sign-in-link')
+      }
+      const email = localStorage.getItem(PENDING_EMAIL_KEY)
+      if (!email) throw new Error('no-pending-email')
+      setCompletingSignIn(true)
+      try {
+        await finishLink(email, trimmed)
+      } catch (err) {
+        setCompletingSignIn(false)
+        throw err
+      }
+    },
+    [finishLink],
+  )
 
   const signInAnon = useCallback(async () => {
     // Idempotent — no-op if already signed in (real or anonymous).
@@ -179,8 +215,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         completingSignIn,
         needsEmailConfirm,
         needsAvatar,
+        pendingEmail,
         sendLink,
         confirmEmailAndSignIn,
+        completeSignInWithPastedUrl,
         signInAnon,
         completeProfile,
         signOutUser,
