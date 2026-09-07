@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { initializeFirestore } from 'firebase/firestore'
+import { getMessaging, isSupported, type Messaging } from 'firebase/messaging'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDVAbxj3ZXfp5feOMvxgIKOnEmEI783lMg',
@@ -21,5 +22,16 @@ export const auth = getAuth(app)
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
 })
+
+// Messaging is not available in every browser (Firefox private mode, older
+// Safari, SSR) so we probe before constructing. Callers should treat `null`
+// as "push not available on this device" rather than an error.
+export async function getMessagingIfSupported(): Promise<Messaging | null> {
+  try {
+    return (await isSupported()) ? getMessaging(app) : null
+  } catch {
+    return null
+  }
+}
 
 export default app

@@ -17,6 +17,7 @@ export default defineConfig({
       'firebase/app',
       'firebase/auth',
       'firebase/firestore',
+      'firebase/messaging',
       'animejs',
       'lucide-react',
       '@anthropic-ai/sdk',

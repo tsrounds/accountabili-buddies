@@ -7,6 +7,8 @@ export interface UserProfile {
   avatarSeed: string
   isAdmin: boolean
   createdAt: Timestamp
+  /** One entry per browser/device that has enabled push. */
+  fcmTokens?: string[]
 }
 
 export type DurationType = 'fixed' | 'ongoing'
