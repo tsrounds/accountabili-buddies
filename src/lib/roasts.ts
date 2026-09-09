@@ -20,6 +20,11 @@ import type {
 
 const GOSSIP_SAMPLE_SIZE = 3
 
+// Bumped whenever generation logic changes materially — the enlarged
+// fallback pools, the batch-uniqueness rule in the LLM prompt, or a
+// post-processing pass. A read that finds an older version regenerates.
+const ROAST_SCHEMA_VERSION = 2
+
 // Client-side by design: tiny private friend group, no Cloud Functions.
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined
 export const aiEnabled = Boolean(apiKey)
@@ -72,7 +77,13 @@ export async function getOrGenerateDailyRoasts(
     await deleteDoc(ref).catch(() => {})
   } else {
     const snap = await getDoc(ref)
-    if (snap.exists()) return snap.data() as RoastDoc
+    if (snap.exists()) {
+      const cached = snap.data() as RoastDoc
+      // Ignore caches from before the current generation logic — they'd
+      // otherwise pin the group to the old pools / pre-uniqueness prompt
+      // for the rest of the day.
+      if ((cached.schemaVersion ?? 1) >= ROAST_SCHEMA_VERSION) return cached
+    }
   }
   if (standings.length === 0) return null
 
@@ -93,7 +104,12 @@ export async function getOrGenerateDailyRoasts(
     entries = fallbackRoasts(inputs, date)
   }
 
-  await setDoc(ref, { date, generatedAt: serverTimestamp(), entries })
+  await setDoc(ref, {
+    date,
+    generatedAt: serverTimestamp(),
+    entries,
+    schemaVersion: ROAST_SCHEMA_VERSION,
+  })
   return (await getDoc(ref)).data() as RoastDoc
 }
 
@@ -119,7 +135,7 @@ export async function patchEntryAfterCheckin(
   const entries = existing.entries.map((e) =>
     e.uid === uid ? { ...e, checkedIn: true, roast: line } : e,
   )
-  await setDoc(ref, { ...existing, entries })
+  await setDoc(ref, { ...existing, entries, schemaVersion: ROAST_SCHEMA_VERSION })
 }
 
 /** Paragraph-length dramatic recap for the weekly dispatch. */

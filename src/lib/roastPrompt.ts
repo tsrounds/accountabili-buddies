@@ -226,7 +226,7 @@ Return: [{ "uid": "...", "firstName": "...", "roast": "..." }]`,
     roast: string
   }[]
 
-  return members.map((m) => {
+  const raw = members.map((m) => {
     const match = parsed.find((p) => p.uid === m.uid || p.firstName === m.firstName)
     return {
       uid: m.uid,
@@ -234,6 +234,50 @@ Return: [{ "uid": "...", "firstName": "...", "roast": "..." }]`,
       avatarSeed: m.avatarSeed,
       checkedIn: m.checkedInToday,
       roast: match?.roast ?? fallbackLine(m),
+      // Keep the input on hand for the dedup pass — dropped before return.
+      _input: m,
     }
+  })
+
+  return dedupeRoasts(raw)
+}
+
+/**
+ * Post-processing safety net for when the LLM ignores the uniqueness rule
+ * (e.g. three members at 0% all get "Zero check-ins from X..."). Compares
+ * each roast's opening phrase against the ones already accepted — a repeat
+ * gets swapped for a fallback pool line for that person, walking the pool
+ * until we find one whose opening is also fresh.
+ */
+function dedupeRoasts(
+  raw: (RoastEntry & { _input: RoastMemberInput })[],
+): RoastEntry[] {
+  const seenOpenings = new Set<string>()
+  const openingOf = (s: string) =>
+    // First ~24 chars, lowercased, with the member's name normalized out —
+    // "Zero check-ins from Alice" and "Zero check-ins from Bob" should be
+    // detected as the same opener despite different names.
+    s.toLowerCase().replace(/[^a-z ]+/g, '').split(/\s+/).slice(0, 5).join(' ')
+
+  return raw.map((entry) => {
+    let roast = entry.roast
+    let opening = openingOf(roast)
+    if (seenOpenings.has(opening)) {
+      const pool = pickPool(entry._input)
+      const anchor = hashIndex(entry._input.uid, pool.length)
+      for (let step = 0; step < pool.length; step++) {
+        const candidate = fill(pool[(anchor + step) % pool.length], entry._input)
+        const candidateOpening = openingOf(candidate)
+        if (!seenOpenings.has(candidateOpening)) {
+          roast = candidate
+          opening = candidateOpening
+          break
+        }
+      }
+    }
+    seenOpenings.add(opening)
+    const { _input, ...clean } = entry
+    void _input
+    return { ...clean, roast }
   })
 }

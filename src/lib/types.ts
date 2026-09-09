@@ -67,6 +67,8 @@ export interface RoastDoc {
   date: string
   generatedAt: Timestamp
   entries: RoastEntry[]
+  /** Bumped when generation logic changes so stale caches auto-regenerate. */
+  schemaVersion?: number
 }
 
 export interface DispatchLeaderboardRow {
