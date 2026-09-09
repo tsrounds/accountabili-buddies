@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Flag, Target, X, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -229,7 +230,7 @@ function HistoryCalendar({
       )}
 
       {/* Backdate modal */}
-      {backdateDay && (
+      {backdateDay && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-space/40 backdrop-blur-sm sm:items-center"
           onClick={() => !backdateBusy && setBackdateDay(null)}
@@ -289,7 +290,8 @@ function HistoryCalendar({
               Never mind
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

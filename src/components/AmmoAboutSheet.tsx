@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { ArrowRight, X } from 'lucide-react'
 import { nextAmmoPrompt, type AmmoPrompt } from '../lib/ammoQuestions'
 import { submitAmmoAnswer } from '../lib/challenges'
@@ -86,7 +87,7 @@ export default function AmmoAboutSheet({
     advance()
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-space/40 backdrop-blur-sm sm:items-center"
       onClick={onClose}
@@ -161,6 +162,7 @@ export default function AmmoAboutSheet({
           </button>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

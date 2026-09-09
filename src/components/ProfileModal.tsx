@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { Bell, BellOff, LogOut, X } from 'lucide-react'
 import AvatarBuilder from './AvatarBuilder'
 import type { PermissionResult } from '../lib/notifications'
@@ -40,7 +41,7 @@ export default function ProfileModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-space/40 backdrop-blur-sm sm:items-center"
       onClick={onClose}
@@ -98,7 +99,8 @@ export default function ProfileModal({
           Sign out
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
