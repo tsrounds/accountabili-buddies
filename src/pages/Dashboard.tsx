@@ -18,6 +18,7 @@ import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
 import CheckInButton from '../components/CheckInButton'
 import CheckInCelebration from '../components/CheckInCelebration'
+import InstallNudge from '../components/InstallNudge'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
@@ -439,6 +440,10 @@ export default function Dashboard() {
           </button>
         </div>
       </header>
+
+      <div className="mx-auto max-w-lg px-5">
+        <InstallNudge />
+      </div>
 
       {!challenge || !member ? (
         <EmptyState isAdmin={Boolean(profile?.isAdmin)} />

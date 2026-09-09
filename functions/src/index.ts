@@ -2,24 +2,16 @@ import { initializeApp } from 'firebase-admin/app'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging'
 import { logger } from 'firebase-functions/v2'
-import {
-  onDocumentCreated,
-  onDocumentWritten,
-} from 'firebase-functions/v2/firestore'
-import { onSchedule } from 'firebase-functions/v2/scheduler'
+import { onDocumentCreated } from 'firebase-functions/v2/firestore'
 
 initializeApp()
 const db = getFirestore()
 
 // All user-visible strings live here so voice tweaks don't hunt through logic.
 const COPY = {
-  roast: {
-    title: "Today's roast is live",
-    body: 'The mascot has words for you.',
-  },
-  nudge: (challengeName: string) => ({
-    title: 'Check-in missing',
-    body: `${challengeName} is watching. You've got a few hours.`,
+  checkin: (checkerFirstName: string, challengeName: string) => ({
+    title: `${checkerFirstName} just checked in`,
+    body: `${challengeName} moved without you. Fix that.`,
   }),
   join: (newFirstName: string, challengeName: string) => ({
     title: 'New buddy joined',
@@ -104,77 +96,54 @@ async function sendToUsers(
 }
 
 /**
- * Trigger 1 — a new daily roast lands. Fires only on first create so a manual
- * regeneration (force=true in getOrGenerateDailyRoasts) doesn't re-notify.
+ * Trigger 1 — someone checked in. Notify every other member of the same
+ * challenge so peer pressure compounds in real time.
+ *
+ * Guards:
+ *  - Backdated check-ins (a `date` field earlier than today in LA) don't
+ *    fanout — a friend filling in yesterday's log at midnight shouldn't wake
+ *    everyone up. Today is computed in America/Los_Angeles because that's
+ *    the group's home timezone.
+ *  - `onDocumentCreated` already prevents re-notifying if the same doc is
+ *    ever rewritten.
  */
-export const onRoastPublished = onDocumentWritten(
-  'ab_challenges/{challengeId}/roasts/{date}',
+export const onCheckinCreated = onDocumentCreated(
+  'ab_challenges/{challengeId}/checkins/{checkinId}',
   async (event) => {
-    if (!event.data?.after.exists) return
-    if (event.data.before?.exists) return
+    const checkin = event.data?.data() as
+      | { uid?: string; firstName?: string; date?: string }
+      | undefined
+    if (!checkin?.uid) return
 
-    const doc = event.data.after.data() as {
-      date: string
-      entries: { uid: string }[]
-    }
-    const uids = (doc.entries ?? []).map((e) => e.uid).filter(Boolean)
-    if (uids.length === 0) return
-
-    await sendToUsers(uids, COPY.roast, {
-      challengeId: event.params.challengeId,
-      date: doc.date,
-      kind: 'roast',
-    })
-  },
-)
-
-/**
- * Trigger 2 — nightly nudge. NOTE: `todayKey()` in the client is device-local,
- * not LA-locked. We compute today in America/Los_Angeles server-side, which
- * matches an LA user's browser but drifts for members in other timezones.
- * Acceptable for a small friend group.
- */
-export const onDailyMissedCheckins = onSchedule(
-  { schedule: '0 18 * * *', timeZone: 'America/Los_Angeles' },
-  async () => {
-    // en-CA emits ISO YYYY-MM-DD natively, so no reshaping needed.
-    const today = new Intl.DateTimeFormat('en-CA', {
+    const todayLA = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'America/Los_Angeles',
     }).format(new Date())
+    if (checkin.date && checkin.date !== todayLA) return
 
-    const challenges = await db
-      .collection('ab_challenges')
-      .where('status', '==', 'active')
-      .get()
+    const { challengeId } = event.params as { challengeId: string }
+    const [challengeSnap, membersSnap] = await Promise.all([
+      db.doc(`ab_challenges/${challengeId}`).get(),
+      db.collection(`ab_challenges/${challengeId}/members`).get(),
+    ])
+    if (!challengeSnap.exists) return
+    const challengeName =
+      (challengeSnap.data()?.name as string) ?? 'your challenge'
 
-    for (const challengeDoc of challenges.docs) {
-      const challengeName =
-        (challengeDoc.data().name as string) ?? 'your challenge'
-      const members = await challengeDoc.ref.collection('members').get()
+    const otherUids = membersSnap.docs
+      .map((d) => d.id)
+      .filter((id) => id !== checkin.uid)
+    if (otherUids.length === 0) return
 
-      const missing: string[] = []
-      await Promise.all(
-        members.docs.map(async (m) => {
-          const snap = await challengeDoc.ref
-            .collection('checkins')
-            .doc(`${m.id}_${today}`)
-            .get()
-          if (!snap.exists) missing.push(m.id)
-        }),
-      )
-      if (missing.length === 0) continue
-
-      await sendToUsers(missing, COPY.nudge(challengeName), {
-        challengeId: challengeDoc.id,
-        date: today,
-        kind: 'nudge',
-      })
-    }
+    await sendToUsers(
+      otherUids,
+      COPY.checkin(checkin.firstName ?? 'Someone', challengeName),
+      { challengeId, date: checkin.date ?? todayLA, kind: 'checkin' },
+    )
   },
 )
 
 /**
- * Trigger 3 — a new member joins a challenge. Notify every existing member
+ * Trigger 2 — a new member joins a challenge. Notify every existing member
  * except the joiner themselves.
  */
 export const onMemberJoined = onDocumentCreated(
