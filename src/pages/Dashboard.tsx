@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowDown, ArrowUp, Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChallengeData } from '../hooks/useChallengeData'
 import { useMyChallenges } from '../hooks/useMyChallenges'
 import { checkInToday, getInviteCode, updateMemberProfile } from '../lib/challenges'
-import { formatDay } from '../lib/dates'
+import { formatDay, todayKey } from '../lib/dates'
 import { getOrGenerateDispatch } from '../lib/dispatch'
+import { patchEntryAfterCheckin } from '../lib/roasts'
+import { positiveLine } from '../lib/roastPrompt'
 import { frequencyLabel } from '../lib/stats'
 import { pageEnter, useHoverLift } from '../lib/motion'
 import { renderAvatarDataUri } from '../lib/avatar'
@@ -14,6 +17,7 @@ import { requestNotificationPermission } from '../lib/notifications'
 import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
 import CheckInButton from '../components/CheckInButton'
+import CheckInCelebration from '../components/CheckInCelebration'
 import Leaderboard from '../components/Leaderboard'
 import LoadingScreen from '../components/LoadingScreen'
 import Mascot from '../components/Mascot'
@@ -115,7 +119,7 @@ function ShareModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-space/40 backdrop-blur-sm sm:items-center"
       onClick={onClose}
@@ -160,7 +164,8 @@ function ShareModal({
           Done
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -366,6 +371,7 @@ export default function Dashboard() {
   const [showShare, setShowShare] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
+  const [celebration, setCelebration] = useState<{ line: string; firstName: string } | null>(null)
 
   // Default to the newest active challenge; keep the current pick if it's
   // still around (e.g. after a refresh), otherwise fall back.
@@ -541,8 +547,37 @@ export default function Dashboard() {
                 <CheckInButton
                   checkedIn={Boolean(me?.checkedInToday)}
                   onCheckIn={async (note) => {
-                    if (!user || !profile) return
-                    await checkInToday(challenge.id, user.uid, profile.firstName, profile.avatarSeed, note)
+                    if (!user || !profile || !member) return
+                    await checkInToday(
+                      challenge.id,
+                      user.uid,
+                      profile.firstName,
+                      profile.avatarSeed,
+                      note,
+                    )
+                    setCelebration({
+                      firstName: profile.firstName,
+                      line: positiveLine(
+                        {
+                          uid: user.uid,
+                          firstName: profile.firstName,
+                          personalGoal: member.personalGoal,
+                        },
+                        todayKey(),
+                      ),
+                    })
+                    // Patch the cached roast doc BEFORE refreshing standings so
+                    // RoastsSection's re-read sees the fresh positive entry.
+                    try {
+                      await patchEntryAfterCheckin(
+                        challenge,
+                        user.uid,
+                        profile.firstName,
+                        member.personalGoal,
+                      )
+                    } catch (err) {
+                      console.error('roast patch failed', err)
+                    }
                     await refresh()
                   }}
                 />
@@ -626,6 +661,14 @@ export default function Dashboard() {
             </ul>
           </section>
         </div>
+      )}
+
+      {celebration && (
+        <CheckInCelebration
+          firstName={celebration.firstName}
+          line={celebration.line}
+          onDismiss={() => setCelebration(null)}
+        />
       )}
 
       {showProfile && (

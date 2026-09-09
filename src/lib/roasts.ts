@@ -7,6 +7,7 @@ import {
   ROAST_MODEL,
   callDailyRoastApi,
   fallbackRoasts,
+  positiveLine,
   type RoastMemberInput,
 } from './roastPrompt'
 import type {
@@ -86,14 +87,39 @@ export async function getOrGenerateDailyRoasts(
     const client = aiEnabled ? await getClient() : null
     entries = client
       ? await callDailyRoastApi(client, challenge.name, inputs)
-      : fallbackRoasts(inputs)
+      : fallbackRoasts(inputs, date)
   } catch (err) {
     console.error('roast generation failed, using fallback', err)
-    entries = fallbackRoasts(inputs)
+    entries = fallbackRoasts(inputs, date)
   }
 
   await setDoc(ref, { date, generatedAt: serverTimestamp(), entries })
   return (await getDoc(ref)).data() as RoastDoc
+}
+
+/**
+ * After a user checks in, flip their entry in today's cached roast doc to a
+ * positive tone so "Today's roasts" reflects reality on the next read. No-op
+ * if today's doc hasn't been generated yet — the first viewer will pick up
+ * the fresh checkedInToday state naturally.
+ */
+export async function patchEntryAfterCheckin(
+  challenge: Challenge,
+  uid: string,
+  firstName: string,
+  personalGoal: string,
+): Promise<void> {
+  const date = todayKey()
+  const ref = doc(db, 'ab_challenges', challenge.id, 'roasts', date)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return
+
+  const existing = snap.data() as RoastDoc
+  const line = positiveLine({ uid, firstName, personalGoal }, date)
+  const entries = existing.entries.map((e) =>
+    e.uid === uid ? { ...e, checkedIn: true, roast: line } : e,
+  )
+  await setDoc(ref, { ...existing, entries })
 }
 
 /** Paragraph-length dramatic recap for the weekly dispatch. */

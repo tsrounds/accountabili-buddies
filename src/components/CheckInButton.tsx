@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { animate, createTimeline, utils } from 'animejs'
-import { Check, Stamp } from 'lucide-react'
+import { Check, Stamp, X } from 'lucide-react'
 import { prefersReducedMotion, useHoverLift } from '../lib/motion'
 
 const BURST_COLORS = ['var(--color-brick)', 'var(--color-steel)', 'var(--color-space)', 'var(--color-lava)']
@@ -33,37 +34,60 @@ interface CheckInButtonProps {
 }
 
 /**
- * The main CTA of the entire app. Tapping it should feel like stamping a
- * seal: press → slam → ring shockwave → particle burst → settled ✓ state.
+ * Two-step CTA: tap opens the details sheet; the sheet's Submit or Skip
+ * both commit the check-in, then the button plays its stamp animation.
  */
 export default function CheckInButton({ checkedIn, onCheckIn }: CheckInButtonProps) {
   const [busy, setBusy] = useState(false)
   const [justStamped, setJustStamped] = useState(false)
-  const [showNote, setShowNote] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
   const [note, setNote] = useState('')
   const wrapRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const ringRef = useRef<HTMLSpanElement>(null)
   const checkRef = useRef<HTMLSpanElement>(null)
   const hoverRef = useHoverLift({ scale: 1.03, y: -2 })
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const done = checkedIn || justStamped
 
-  async function handleTap() {
-    if (busy || done || !btnRef.current) return
+  useEffect(() => {
+    if (showDetails) requestAnimationFrame(() => textareaRef.current?.focus())
+  }, [showDetails])
+
+  useEffect(() => {
+    if (!showDetails) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !busy) setShowDetails(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showDetails, busy])
+
+  function openDetails() {
+    if (busy || done) return
+    setNote('')
+    setShowDetails(true)
+  }
+
+  async function commit(withNote: string) {
+    if (busy || done) return
     setBusy(true)
     try {
-      await onCheckIn(note.trim())
+      await onCheckIn(withNote.trim())
     } catch (err) {
       console.error('check-in failed', err)
       setBusy(false)
       return
     }
     setJustStamped(true)
-    setShowNote(false)
+    setShowDetails(false)
     setBusy(false)
+    playStamp()
+  }
 
-    if (prefersReducedMotion() || !wrapRef.current) return
+  function playStamp() {
+    if (prefersReducedMotion() || !wrapRef.current || !btnRef.current) return
     const tl = createTimeline()
     tl.add(btnRef.current, {
       scale: [1, 0.93],
@@ -108,7 +132,7 @@ export default function CheckInButton({ checkedIn, onCheckIn }: CheckInButtonPro
           (btnRef as React.MutableRefObject<HTMLButtonElement | null>).current = el
           hoverRef(done ? null : el)
         }}
-        onClick={handleTap}
+        onClick={openDetails}
         disabled={busy || done}
         aria-live="polite"
         className={`font-display relative flex w-full items-center justify-center gap-3 rounded-2xl py-6 text-2xl tracking-wider uppercase shadow-lifted transition-colors duration-300 ${
@@ -125,32 +149,76 @@ export default function CheckInButton({ checkedIn, onCheckIn }: CheckInButtonPro
         ) : (
           <>
             <Stamp className="h-7 w-7" aria-hidden />
-            {busy ? 'Stamping…' : 'Check in'}
+            Check in
           </>
         )}
       </button>
 
-      {!done && (
-        <div className="mt-2 text-center">
-          {showNote ? (
-            <input
-              autoFocus
-              type="text"
-              maxLength={140}
+      {showDetails && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-space/40 backdrop-blur-sm sm:items-center"
+          onClick={() => !busy && setShowDetails(false)}
+        >
+          <div
+            className="w-full max-w-sm animate-[slideUp_200ms_ease-out] rounded-t-2xl bg-papaya p-6 shadow-lifted sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-brick">
+                  Today's check-in
+                </p>
+                <h3 className="font-display mt-1 text-2xl leading-tight tracking-wide uppercase text-space">
+                  What'd you do?
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => !busy && setShowDetails(false)}
+                disabled={busy}
+                aria-label="Close"
+                className="shrink-0 rounded-full p-1 text-space/40 hover:bg-space/8 hover:text-space"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mt-1 text-xs text-space/60">
+              Optional — but the receipts make the roasts better.
+            </p>
+
+            <textarea
+              ref={textareaRef}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Optional receipts — what did you do?"
-              className="w-full rounded-xl border-2 border-space/15 bg-white px-4 py-3 text-sm text-space placeholder:text-space/30 focus:border-steel"
+              maxLength={280}
+              rows={3}
+              placeholder="e.g. 30 min lift, legs. Felt like a betrayal."
+              className="mt-4 w-full resize-none rounded-xl border-2 border-space/15 bg-white px-4 py-3 text-sm text-space placeholder:text-space/30 focus:border-steel focus:outline-none"
             />
-          ) : (
+            <p className="mt-1 text-right text-[0.65rem] font-bold uppercase tracking-wider text-space/40">
+              {note.length}/280
+            </p>
+
             <button
-              onClick={() => setShowNote(true)}
-              className="text-xs font-bold text-space/50 underline underline-offset-4"
+              type="button"
+              onClick={() => commit(note)}
+              disabled={busy}
+              className="font-display mt-3 w-full rounded-xl bg-brick py-3.5 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava disabled:opacity-50"
             >
-              + add a note
+              {busy ? 'Stamping…' : 'Submit'}
             </button>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={() => commit('')}
+              disabled={busy}
+              className="mt-2 w-full py-2 text-center text-sm font-bold text-space/60 underline underline-offset-4 disabled:opacity-40"
+            >
+              Skip — just check in
+            </button>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
