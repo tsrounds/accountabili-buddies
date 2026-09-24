@@ -471,8 +471,8 @@ export default function ChallengeDetail() {
           </div>
         </section>
 
-        {/* ── Admin: end challenge ─────────────────────── */}
-        {profile?.isAdmin && (
+        {/* ── End challenge (admin or the person who created it) ────── */}
+        {(profile?.isAdmin || user?.uid === challenge.creatorUid) && (
           <section data-animate className="mt-10 text-center">
             {confirmEnd ? (
               <div className="rounded-xl border-2 border-brick/30 bg-brick/10 p-4">

@@ -31,7 +31,7 @@ export default function App() {
         <Route
           path="/create"
           element={
-            <AuthGuard adminOnly>
+            <AuthGuard>
               <CreateMission />
             </AuthGuard>
           }

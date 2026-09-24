@@ -1,8 +1,11 @@
+import { randomInt } from 'node:crypto'
 import { initializeApp } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging'
 import { logger } from 'firebase-functions/v2'
 import { onDocumentCreated } from 'firebase-functions/v2/firestore'
+import { HttpsError, onCall } from 'firebase-functions/v2/https'
 
 initializeApp()
 const db = getFirestore()
@@ -176,3 +179,78 @@ export const onMemberJoined = onDocumentCreated(
     )
   },
 )
+
+// ─────────────────── device-pairing handoff ───────────────────
+//
+// Lets an already-signed-in tab hand its session to a freshly-installed
+// home-screen icon (iOS partitions that icon's storage away from Safari, so
+// it never sees the tab's session) without repeating email verification.
+
+// Excludes 0/O/1/I/L — easy to misread when copying a code off one phone
+// screen onto another.
+const PAIRING_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+const PAIRING_CODE_LENGTH = 8
+const PAIRING_CODE_TTL_MS = 10 * 60 * 1000
+
+function generatePairingCode(): string {
+  let code = ''
+  for (let i = 0; i < PAIRING_CODE_LENGTH; i++) {
+    code += PAIRING_CODE_ALPHABET[randomInt(PAIRING_CODE_ALPHABET.length)]
+  }
+  return code
+}
+
+// Deliberately NOT prefixed "ab_" — the deployed Firestore rules grant any
+// signed-in user (anonymous auth included) read/write on every `ab_*`
+// collection. A code doc carries a plaintext uid, so a client that could
+// write one directly would let anyone mint their own "pairing" to someone
+// else's account, bypassing this function entirely. Staying outside that
+// prefix keeps it covered by Firestore's default-deny instead.
+const PAIRING_CODES_COLLECTION = 'pairing_codes'
+
+/** Mint a single-use pairing code for the caller's own account. */
+export const createPairingCode = onCall(async (request) => {
+  const uid = request.auth?.uid
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.')
+
+  const code = generatePairingCode()
+  const expiresAt = Date.now() + PAIRING_CODE_TTL_MS
+  await db.doc(`${PAIRING_CODES_COLLECTION}/${code}`).set({
+    uid,
+    createdAt: FieldValue.serverTimestamp(),
+    expiresAt,
+    used: false,
+  })
+  return { code, expiresAt }
+})
+
+/**
+ * Redeem a pairing code for a custom auth token. No caller auth required —
+ * this IS the sign-in step. Single-use and 10-minute-lived, so the 8-char
+ * code space (~1.1e12 combinations) can't be brute-forced in the window.
+ */
+export const redeemPairingCode = onCall(async (request) => {
+  const raw = (request.data as { code?: string } | undefined)?.code
+  const code = raw?.trim().toUpperCase()
+  if (!code) throw new HttpsError('invalid-argument', 'Missing code.')
+
+  const ref = db.doc(`${PAIRING_CODES_COLLECTION}/${code}`)
+  const uid = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'That code is wrong or expired.')
+    }
+    const data = snap.data() as { uid: string; used: boolean; expiresAt: number }
+    if (data.used) {
+      throw new HttpsError('failed-precondition', 'That code was already used.')
+    }
+    if (data.expiresAt < Date.now()) {
+      throw new HttpsError('deadline-exceeded', 'That code expired.')
+    }
+    tx.update(ref, { used: true })
+    return data.uid
+  })
+
+  const token = await getAuth().createCustomToken(uid)
+  return { token }
+})

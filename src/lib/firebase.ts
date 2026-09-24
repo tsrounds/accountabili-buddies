@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { initializeFirestore } from 'firebase/firestore'
+import { getFunctions } from 'firebase/functions'
 import { getMessaging, isSupported, type Messaging } from 'firebase/messaging'
 
 const firebaseConfig = {
@@ -16,6 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
+export const functions = getFunctions(app)
 // Auto-detect long-polling — WebChannel streaming stalls for 20-30s on many
 // mobile carriers and iOS Safari before falling back on its own. This makes
 // Firestore skip the broken handshake when the environment can't stream.

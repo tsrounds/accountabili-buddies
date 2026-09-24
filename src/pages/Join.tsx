@@ -32,7 +32,7 @@ const MIN_AMMO_ANSWERS = 3
 
 export default function Join() {
   const { code = '' } = useParams()
-  const { user, loading, signInAnon, completeProfile } = useAuth()
+  const { user, loading, signInAnon, completeProfile, sendLink } = useAuth()
   const navigate = useNavigate()
   const [state, setState] = useState<Phase>({ phase: 'loading' })
   const rootRef = useRef<HTMLDivElement>(null)
@@ -40,6 +40,7 @@ export default function Join() {
   // Wizard state carried across phases — not written to Firestore until each
   // phase's own commit point.
   const [firstName, setFirstName] = useState('')
+  const [email, setEmail] = useState('')
   const [avatarSeed, setAvatarSeed] = useState(() => randomAvatarSeed())
   const [goal, setGoal] = useState('')
   const [frequency, setFrequency] = useState(3)
@@ -148,11 +149,18 @@ export default function Join() {
 
   async function handleIdentityNext(e: FormEvent) {
     e.preventDefault()
-    if (!firstName.trim() || busy) return
+    if (!firstName.trim() || !email.trim() || busy) return
     setBusy(true)
     setError('')
     try {
-      await completeProfile({ firstName: firstName.trim(), avatarSeed })
+      const cleanEmail = email.trim().toLowerCase()
+      await completeProfile({ firstName: firstName.trim(), avatarSeed, email: cleanEmail })
+      // Fires the magic link in the background — clicking it later links
+      // this email onto the account we already have, instead of leaving it
+      // anonymous. Doesn't block the wizard; joining still works instantly.
+      void sendLink(cleanEmail, firstName.trim()).catch((err) =>
+        console.error('background sendLink failed', err),
+      )
       setState({ phase: 'goal', challenge, members })
     } catch (err) {
       console.error(err)
@@ -209,6 +217,8 @@ export default function Join() {
           <IdentityPhase
             firstName={firstName}
             setFirstName={setFirstName}
+            email={email}
+            setEmail={setEmail}
             avatarSeed={avatarSeed}
             setAvatarSeed={setAvatarSeed}
             busy={busy}
@@ -317,6 +327,8 @@ function PreviewPhase({
 function IdentityPhase({
   firstName,
   setFirstName,
+  email,
+  setEmail,
   avatarSeed,
   setAvatarSeed,
   busy,
@@ -325,6 +337,8 @@ function IdentityPhase({
 }: {
   firstName: string
   setFirstName: (v: string) => void
+  email: string
+  setEmail: (v: string) => void
   avatarSeed: string
   setAvatarSeed: (v: string) => void
   busy: boolean
@@ -365,6 +379,26 @@ function IdentityPhase({
         />
       </label>
 
+      <label data-animate className="flex flex-col gap-1">
+        <span className="text-xs font-bold tracking-wide uppercase text-space/60">
+          Your email
+        </span>
+        <input
+          type="email"
+          required
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-base text-space placeholder:text-space/30 focus:border-steel"
+        />
+        <span className="mt-1 text-xs text-space/50">
+          So this account follows you — switch phones, add Buddies to your
+          home screen, whatever. Same email, same streak, no do-overs.
+        </span>
+      </label>
+
       {error && (
         <p data-animate className="text-sm font-bold text-brick">
           {error}
@@ -374,7 +408,7 @@ function IdentityPhase({
       <button
         data-animate
         type="submit"
-        disabled={busy || !firstName.trim()}
+        disabled={busy || !firstName.trim() || !email.trim()}
         className="font-display flex items-center justify-center gap-2 rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava disabled:opacity-50"
       >
         {busy ? 'Saving…' : 'Next'}

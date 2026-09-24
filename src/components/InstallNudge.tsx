@@ -3,6 +3,77 @@ import { Bell, Share, X } from 'lucide-react'
 import { requestNotificationPermission, type PermissionResult } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 
+/**
+ * Generates a short-lived pairing code (via Cloud Function) the user can
+ * type into the freshly-installed home-screen icon instead of redoing email
+ * verification — that icon's storage is isolated from this tab, so it has
+ * no session of its own yet.
+ */
+function PairingCodeBox() {
+  const { createPairingCode } = useAuth()
+  const [pairing, setPairing] = useState<{ code: string; expiresAt: number } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    if (!pairing) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [pairing])
+
+  async function generate() {
+    setBusy(true)
+    setError('')
+    try {
+      const res = await createPairingCode()
+      setPairing(res)
+      setNow(Date.now())
+    } catch (err) {
+      console.error('createPairingCode failed', err)
+      setError('Couldn’t get a code. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const secondsLeft = pairing ? Math.max(0, Math.round((pairing.expiresAt - now) / 1000)) : 0
+  const expired = pairing !== null && secondsLeft <= 0
+
+  return (
+    <div className="mt-3 rounded-xl bg-papaya/60 p-3">
+      {!pairing || expired ? (
+        <button
+          type="button"
+          onClick={generate}
+          disabled={busy}
+          className="font-display w-full rounded-xl border-2 border-space/15 bg-white py-2.5 text-sm tracking-wide uppercase text-space active:bg-space/5 disabled:opacity-50"
+        >
+          {busy
+            ? 'Getting a code…'
+            : expired
+              ? 'Code expired — get a new one'
+              : 'Get a pairing code'}
+        </button>
+      ) : (
+        <div className="text-center">
+          <p className="text-xs font-bold tracking-wide uppercase text-space/50">
+            Enter this in the app
+          </p>
+          <p className="font-display mt-1 text-3xl tracking-[0.15em] text-space">
+            {pairing.code}
+          </p>
+          <p className="mt-1 text-xs text-space/50">
+            Expires in {Math.floor(secondsLeft / 60)}:
+            {String(secondsLeft % 60).padStart(2, '0')}
+          </p>
+        </div>
+      )}
+      {error && <p className="mt-2 text-xs font-bold text-brick">{error}</p>}
+    </div>
+  )
+}
+
 const DISMISS_KEY = 'ab_install_nudge_dismissed_until'
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -165,21 +236,26 @@ export default function InstallNudge() {
         {expanded ? 'Hide steps' : 'Show me how'}
       </button>
       {expanded && (
-        <ol className="mt-3 space-y-2 rounded-xl bg-papaya/60 p-3 text-sm text-space/80">
-          <li>
-            <span className="font-bold text-space">1.</span> Tap the{' '}
-            <Share className="inline h-4 w-4 -translate-y-0.5 text-steel" aria-hidden />{' '}
-            Share button at the bottom of Safari.
-          </li>
-          <li>
-            <span className="font-bold text-space">2.</span> Scroll and choose{' '}
-            <span className="font-bold text-space">Add to Home Screen</span>.
-          </li>
-          <li>
-            <span className="font-bold text-space">3.</span> Open Buddies from your
-            home screen, then flip on notifications from your profile.
-          </li>
-        </ol>
+        <>
+          <ol className="mt-3 space-y-2 rounded-xl bg-papaya/60 p-3 text-sm text-space/80">
+            <li>
+              <span className="font-bold text-space">1.</span> Tap the{' '}
+              <Share className="inline h-4 w-4 -translate-y-0.5 text-steel" aria-hidden />{' '}
+              Share button at the bottom of Safari.
+            </li>
+            <li>
+              <span className="font-bold text-space">2.</span> Scroll and choose{' '}
+              <span className="font-bold text-space">Add to Home Screen</span>.
+            </li>
+            <li>
+              <span className="font-bold text-space">3.</span> Open Buddies from
+              your home screen. If it asks you to log in again, tap{' '}
+              <span className="font-bold text-space">"Enter a pairing code"</span>{' '}
+              and use the code below instead of your email.
+            </li>
+          </ol>
+          <PairingCodeBox />
+        </>
       )}
     </div>
   )

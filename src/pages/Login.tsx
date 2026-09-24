@@ -35,6 +35,7 @@ export default function Login() {
     confirmEmailAndSignIn,
     completeSignInWithPastedUrl,
     completeProfile,
+    redeemPairingCode,
   } = useAuth()
   const isStandalone = useRef(detectStandalone()).current
   const [phase, setPhase] = useState<Phase>(() => {
@@ -52,6 +53,10 @@ export default function Login() {
   const [pastedUrl, setPastedUrl] = useState('')
   const [pasting, setPasting] = useState(false)
   const [pasteError, setPasteError] = useState('')
+  const [showPairing, setShowPairing] = useState(false)
+  const [pairingCode, setPairingCode] = useState('')
+  const [pairingBusy, setPairingBusy] = useState(false)
+  const [pairingError, setPairingError] = useState('')
   const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -135,6 +140,23 @@ export default function Login() {
       )
     } finally {
       setPasting(false)
+    }
+  }
+
+  async function handlePairingSubmit(e: FormEvent) {
+    e.preventDefault()
+    setPairingError('')
+    if (!pairingCode.trim() || pairingBusy) return
+    setPairingBusy(true)
+    try {
+      await redeemPairingCode(pairingCode.trim())
+    } catch (err) {
+      console.error(err)
+      setPairingError(
+        'That code is wrong, used, or expired. Grab a new one from the app you’re logged into.',
+      )
+    } finally {
+      setPairingBusy(false)
     }
   }
 
@@ -282,6 +304,43 @@ export default function Login() {
             Next
             <ArrowRight className="h-5 w-5" aria-hidden />
           </button>
+
+          <button
+            type="button"
+            onClick={() => setShowPairing((v) => !v)}
+            className="mt-2 text-sm font-bold text-steel underline underline-offset-4"
+          >
+            {showPairing ? 'Never mind' : 'Already logged in elsewhere? Enter a pairing code'}
+          </button>
+          {showPairing && (
+            <form onSubmit={handlePairingSubmit} className="mt-1 flex flex-col gap-3 text-left">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold tracking-wide uppercase text-space/60">
+                  Pairing code
+                </span>
+                <input
+                  type="text"
+                  value={pairingCode}
+                  onChange={(e) => setPairingCode(e.target.value.toUpperCase())}
+                  placeholder="XXXXXXXX"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="font-display rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-center text-xl tracking-[0.2em] text-space placeholder:text-space/25 focus:border-steel"
+                />
+              </label>
+              {pairingError && (
+                <p className="text-sm font-bold text-brick">{pairingError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={!pairingCode.trim() || pairingBusy}
+                className="font-display flex items-center justify-center gap-2 rounded-xl bg-space py-3.5 text-sm tracking-wide uppercase text-papaya shadow-lifted active:bg-space/80 disabled:opacity-50"
+              >
+                {pairingBusy ? 'Signing in…' : 'Sign me in'}
+              </button>
+            </form>
+          )}
         </div>
       ) : (
         <form

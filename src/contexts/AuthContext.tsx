@@ -7,16 +7,20 @@ import {
   type ReactNode,
 } from 'react'
 import {
+  EmailAuthProvider,
   isSignInWithEmailLink,
+  linkWithCredential,
   onAuthStateChanged,
   sendSignInLinkToEmail,
   signInAnonymously,
+  signInWithCustomToken,
   signInWithEmailLink,
   signOut,
   type User,
 } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
-import { auth, db } from '../lib/firebase'
+import { httpsCallable } from 'firebase/functions'
+import { auth, db, functions } from '../lib/firebase'
 import { ADMIN_EMAIL } from '../lib/constants'
 import { FALLBACK_AVATAR_SEED, randomAvatarSeed } from '../lib/avatar'
 import type { UserProfile } from '../lib/types'
@@ -47,8 +51,16 @@ interface AuthContextValue {
   /** Sign the visitor in anonymously if they aren't already signed in. */
   signInAnon: () => Promise<void>
   /** Fill in name/avatar on the current profile (Firestore + local state). */
-  completeProfile: (patch: { firstName: string; avatarSeed: string }) => Promise<void>
+  completeProfile: (patch: { firstName: string; avatarSeed: string; email?: string }) => Promise<void>
   signOutUser: () => Promise<void>
+  /**
+   * Mint a short-lived, single-use code an already-logged-in session can
+   * hand to a logged-out install (e.g. a home-screen icon whose storage is
+   * isolated from this tab) so it can sign into the same account instantly.
+   */
+  createPairingCode: () => Promise<{ code: string; expiresAt: number }>
+  /** Redeem a code from createPairingCode and sign into that account. */
+  redeemPairingCode: (code: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -99,7 +111,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const finishLink = useCallback(async (email: string, urlOverride?: string) => {
     const url = urlOverride ?? window.location.href
     try {
-      await signInWithEmailLink(auth, email, url)
+      const current = auth.currentUser
+      if (current?.isAnonymous) {
+        // Link the verified email onto the SAME uid instead of swapping to a
+        // brand-new one — otherwise an invitee's anonymous progress (joined
+        // challenges, check-ins, ammo) gets orphaned the moment they verify.
+        try {
+          await linkWithCredential(current, EmailAuthProvider.credentialWithLink(email, url))
+        } catch (err) {
+          const code = (err as { code?: string }).code
+          // This email already belongs to a real, pre-existing account —
+          // sign into that one instead. The anonymous profile here is
+          // abandoned in favor of the account that already has the history.
+          if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') {
+            await signInWithEmailLink(auth, email, url)
+          } else {
+            throw err
+          }
+        }
+      } else {
+        await signInWithEmailLink(auth, email, url)
+      }
       localStorage.removeItem(PENDING_EMAIL_KEY)
       setPendingEmail(null)
       setNeedsEmailConfirm(false)
@@ -183,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const completeProfile = useCallback(
-    async (patch: { firstName: string; avatarSeed: string }) => {
+    async (patch: { firstName: string; avatarSeed: string; email?: string }) => {
       const current = auth.currentUser
       if (!current) throw new Error('completeProfile called with no signed-in user')
       await setDoc(doc(db, 'ab_users', current.uid), patch, { merge: true })
@@ -206,6 +238,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOutUser = useCallback(() => signOut(auth), [])
 
+  const createPairingCode = useCallback(async () => {
+    const call = httpsCallable<void, { code: string; expiresAt: number }>(
+      functions,
+      'createPairingCode',
+    )
+    const res = await call()
+    return res.data
+  }, [])
+
+  const redeemPairingCode = useCallback(async (code: string) => {
+    const call = httpsCallable<{ code: string }, { token: string }>(
+      functions,
+      'redeemPairingCode',
+    )
+    const res = await call({ code })
+    await signInWithCustomToken(auth, res.data.token)
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -222,6 +272,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInAnon,
         completeProfile,
         signOutUser,
+        createPairingCode,
+        redeemPairingCode,
       }}
     >
       {children}

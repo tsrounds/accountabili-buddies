@@ -31,7 +31,7 @@ function greeting(): string {
   return h < 12 ? 'Morning' : h < 18 ? 'Afternoon' : 'Evening'
 }
 
-function EmptyState({ isAdmin }: { isAdmin: boolean }) {
+function EmptyState() {
   const [code, setCode] = useState('')
   const navigate = useNavigate()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -47,44 +47,46 @@ function EmptyState({ isAdmin }: { isAdmin: boolean }) {
           No active challenge
         </h2>
         <p data-animate className="mt-2 text-sm text-space/70">
-          {isAdmin
-            ? 'The mascot has nothing to judge. Fix that.'
-            : 'Get an invite code from your group and jump in.'}
+          Start one and rope your friends in, or jump into theirs.
         </p>
-        {isAdmin ? (
-          <Link
-            data-animate
-            to="/create"
-            className="font-display mt-6 block rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava"
+        <Link
+          data-animate
+          to="/create"
+          className="font-display mt-6 block rounded-xl bg-brick py-4 text-lg tracking-wide uppercase text-papaya shadow-lifted active:bg-lava"
+        >
+          Create a challenge
+        </Link>
+
+        <div data-animate className="mt-6 flex items-center gap-3 text-xs font-bold tracking-wide uppercase text-space/40">
+          <span className="h-px flex-1 bg-space/15" />
+          or join one
+          <span className="h-px flex-1 bg-space/15" />
+        </div>
+
+        <form
+          data-animate
+          className="mt-4 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (code.trim()) navigate(`/join/${code.trim().toUpperCase()}`)
+          }}
+        >
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="INVITE CODE"
+            maxLength={6}
+            className="font-display min-w-0 flex-1 rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-center text-xl tracking-[0.2em] text-space placeholder:text-space/25 focus:border-steel"
+          />
+          <button
+            type="submit"
+            disabled={code.trim().length < 6}
+            className="font-display rounded-xl bg-space px-6 text-lg uppercase text-papaya disabled:opacity-40"
           >
-            Create a challenge
-          </Link>
-        ) : (
-          <form
-            data-animate
-            className="mt-6 flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (code.trim()) navigate(`/join/${code.trim().toUpperCase()}`)
-            }}
-          >
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="INVITE CODE"
-              maxLength={6}
-              className="font-display min-w-0 flex-1 rounded-xl border-2 border-space/15 bg-white px-4 py-3.5 text-center text-xl tracking-[0.2em] text-space placeholder:text-space/25 focus:border-steel"
-            />
-            <button
-              type="submit"
-              disabled={code.trim().length < 6}
-              className="font-display rounded-xl bg-brick px-6 text-lg uppercase text-papaya disabled:opacity-40"
-            >
-              Join
-            </button>
-          </form>
-        )}
+            Join
+          </button>
+        </form>
       </div>
     </div>
   )
@@ -446,7 +448,7 @@ export default function Dashboard() {
       </div>
 
       {!challenge || !member ? (
-        <EmptyState isAdmin={Boolean(profile?.isAdmin)} />
+        <EmptyState />
       ) : (
         <div className="mx-auto max-w-lg px-5">
           {/* ── Challenge switcher (only when in more than one) ──── */}
