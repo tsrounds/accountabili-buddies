@@ -7,7 +7,11 @@ export function prefersReducedMotion(): boolean {
 
 /**
  * Standard page entrance: every [data-animate] child cascades in.
- * Elements start hidden via CSS (html.js [data-animate] { opacity: 0 }).
+ *
+ * Call from a LAYOUT effect. The hide is done here, synchronously, one line
+ * before the animation that undoes it — so the elements are never left hidden
+ * by anything other than the animation that is about to reveal them, and a
+ * page that never calls this simply shows its content unanimated.
  */
 export function pageEnter(root: HTMLElement | null): void {
   if (!root) return
@@ -17,6 +21,7 @@ export function pageEnter(root: HTMLElement | null): void {
     utils.set(targets, { opacity: 1 })
     return
   }
+  utils.set(targets, { opacity: 0 })
   animate(targets, {
     opacity: [0, 1],
     translateY: [24, 0],
@@ -26,13 +31,17 @@ export function pageEnter(root: HTMLElement | null): void {
   })
 }
 
-/** Reveal a single late-arriving element (e.g. content that finished loading). */
+/**
+ * Reveal a single late-arriving element (e.g. content that finished loading).
+ * Same contract as pageEnter: call from a layout effect.
+ */
 export function reveal(el: HTMLElement | null, distance = 16): void {
   if (!el) return
   if (prefersReducedMotion()) {
     utils.set(el, { opacity: 1 })
     return
   }
+  utils.set(el, { opacity: 0 })
   animate(el, {
     opacity: [0, 1],
     translateY: [distance, 0],

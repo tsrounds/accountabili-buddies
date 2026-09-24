@@ -115,29 +115,35 @@ function writeSnooze(): void {
  *   2. Installed but notifications untouched → one-tap "Turn on notifications".
  * Dismiss snoozes for 7 days via localStorage.
  */
+type NudgeMode = 'hidden' | 'install' | 'enable'
+
+/**
+ * Every input here is a synchronous browser read, so this resolves during the
+ * first render rather than in an effect. It used to run in an effect, which
+ * meant the banner appeared one commit after paint and shoved the whole
+ * Dashboard down. There is no SSR in this app (createRoot, never hydrate), so
+ * touching window/navigator at render time is safe.
+ */
+function initialMode(): NudgeMode {
+  if (typeof window === 'undefined') return 'hidden'
+  if (readSnoozedUntil() > Date.now()) return 'hidden'
+
+  if (!isStandalone()) {
+    // Only pester iPhones — desktop/Android users don't need home-screen advice.
+    return isIOS() ? 'install' : 'hidden'
+  }
+
+  // Installed. Nudge for permission only if the browser hasn't answered yet.
+  if (typeof Notification === 'undefined') return 'hidden'
+  return Notification.permission === 'default' ? 'enable' : 'hidden'
+}
+
 export default function InstallNudge() {
   const { user } = useAuth()
-  const [mode, setMode] = useState<'hidden' | 'install' | 'enable'>('hidden')
+  const [mode, setMode] = useState<NudgeMode>(initialMode)
   const [expanded, setExpanded] = useState(false)
   const [enabling, setEnabling] = useState(false)
   const [result, setResult] = useState<PermissionResult | null>(null)
-
-  useEffect(() => {
-    // SSR/hydration safety — window access lives inside effect.
-    if (readSnoozedUntil() > Date.now()) return
-
-    const standalone = isStandalone()
-
-    if (!standalone) {
-      // Only pester iPhones — desktop/Android users don't need home-screen advice.
-      if (isIOS()) setMode('install')
-      return
-    }
-
-    // Installed. Nudge for permission only if the browser hasn't answered yet.
-    if (typeof Notification === 'undefined') return
-    if (Notification.permission === 'default') setMode('enable')
-  }, [])
 
   function dismiss() {
     writeSnooze()

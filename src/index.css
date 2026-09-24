@@ -44,13 +44,13 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Elements that JS animates in start hidden — but never when the user
-   prefers reduced motion, and never without JS. */
-@media (prefers-reduced-motion: no-preference) {
-  html.js [data-animate] {
-    opacity: 0;
-  }
-}
+/* [data-animate] elements are deliberately NOT hidden here.
+   They used to be (html.js [data-animate] { opacity: 0 }), with anime.js
+   responsible for bringing them back — which meant any page that failed to
+   run its reveal, or any branch the reveal didn't cover, left content
+   invisible forever. Now motion.ts hides them synchronously in a layout
+   effect, immediately before animating them, so the worst case when JS
+   doesn't run is a missing animation rather than missing content. */
 
 @media (prefers-reduced-motion: reduce) {
   *,

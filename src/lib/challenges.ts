@@ -3,7 +3,9 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromCache,
   getDocs,
+  getDocsFromCache,
   increment,
   limit,
   query,
@@ -79,8 +81,20 @@ export async function getInviteCode(challengeId: string): Promise<string | null>
   return snap.empty ? null : snap.docs[0].id
 }
 
-export async function getChallenge(id: string): Promise<Challenge | null> {
-  const snap = await getDoc(doc(db, 'ab_challenges', id))
+/**
+ * Where a read is allowed to come from. 'cache' hits the on-disk Firestore
+ * cache only and never touches the network — it resolves in a millisecond or
+ * throws if nothing is cached, which is what lets the UI paint before the
+ * server answers. 'server' is the normal read.
+ */
+export type Source = 'server' | 'cache'
+
+export async function getChallenge(
+  id: string,
+  source: Source = 'server',
+): Promise<Challenge | null> {
+  const ref = doc(db, 'ab_challenges', id)
+  const snap = source === 'cache' ? await getDocFromCache(ref) : await getDoc(ref)
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Challenge) : null
 }
 
@@ -91,18 +105,28 @@ function hydrateMember(data: Record<string, unknown>): Member {
 export async function getMember(
   challengeId: string,
   uid: string,
+  source: Source = 'server',
 ): Promise<Member | null> {
-  const snap = await getDoc(doc(db, 'ab_challenges', challengeId, 'members', uid))
+  const ref = doc(db, 'ab_challenges', challengeId, 'members', uid)
+  const snap = source === 'cache' ? await getDocFromCache(ref) : await getDoc(ref)
   return snap.exists() ? hydrateMember(snap.data()) : null
 }
 
-export async function listMembers(challengeId: string): Promise<Member[]> {
-  const snap = await getDocs(collection(db, 'ab_challenges', challengeId, 'members'))
+export async function listMembers(
+  challengeId: string,
+  source: Source = 'server',
+): Promise<Member[]> {
+  const ref = collection(db, 'ab_challenges', challengeId, 'members')
+  const snap = source === 'cache' ? await getDocsFromCache(ref) : await getDocs(ref)
   return snap.docs.map((d) => hydrateMember(d.data()))
 }
 
-export async function listCheckins(challengeId: string): Promise<Checkin[]> {
-  const snap = await getDocs(collection(db, 'ab_challenges', challengeId, 'checkins'))
+export async function listCheckins(
+  challengeId: string,
+  source: Source = 'server',
+): Promise<Checkin[]> {
+  const ref = collection(db, 'ab_challenges', challengeId, 'checkins')
+  const snap = source === 'cache' ? await getDocsFromCache(ref) : await getDocs(ref)
   return snap.docs.map((d) => d.data() as Checkin)
 }
 

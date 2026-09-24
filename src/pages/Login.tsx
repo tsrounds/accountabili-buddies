@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { animate, createTimeline } from 'animejs'
 import { ArrowRight, ClipboardPaste, Send, MailCheck } from 'lucide-react'
@@ -27,6 +27,7 @@ export default function Login() {
     user,
     profile,
     loading,
+    profileLoading,
     completingSignIn,
     needsEmailConfirm,
     needsAvatar,
@@ -59,14 +60,18 @@ export default function Login() {
   const [pairingError, setPairingError] = useState('')
   const rootRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
+  // Layout effect: index.css no longer pre-hides [data-animate], so this
+  // entrance owns both halves — it hides its targets and animates them back in
+  // the same synchronous pass, before the browser paints. Anything that only
+  // did the second half would flash at full opacity first.
+  useLayoutEffect(() => {
     if (loading || completingSignIn || user || !rootRef.current) return
+    const targets = rootRef.current.querySelectorAll<HTMLElement>('[data-animate]')
     if (prefersReducedMotion()) {
-      rootRef.current
-        .querySelectorAll<HTMLElement>('[data-animate]')
-        .forEach((el) => (el.style.opacity = '1'))
+      targets.forEach((el) => (el.style.opacity = '1'))
       return
     }
+    targets.forEach((el) => (el.style.opacity = '0'))
     // Mascot drops in → wordmark → form slides up → button settles ready.
     const tl = createTimeline({ defaults: { ease: 'outCubic' } })
     tl.add('[data-animate="mascot"]', {
@@ -174,6 +179,8 @@ export default function Login() {
     }
   }
 
+  if (user && profileLoading) return <LoadingScreen />
+
   if (user && needsAvatar) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 pt-safe pb-safe">
@@ -210,7 +217,7 @@ export default function Login() {
       className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 pt-safe pb-safe"
     >
       <div data-animate="mascot" className="mb-2">
-        <Mascot variant={phase === 'sent' ? 1 : 0} float size={190} />
+        <Mascot float size={190} />
       </div>
 
       <h1

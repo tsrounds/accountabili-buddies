@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowDown, ArrowUp, Award, Check, ChevronRight, Copy, Share2, Target, TrendingDown } from 'lucide-react'
@@ -12,7 +12,7 @@ import { patchEntryAfterCheckin } from '../lib/roasts'
 import { positiveLine } from '../lib/roastPrompt'
 import { frequencyLabel } from '../lib/stats'
 import { pageEnter, useHoverLift } from '../lib/motion'
-import { renderAvatarDataUri } from '../lib/avatar'
+import AvatarImage from '../components/AvatarImage'
 import { requestNotificationPermission } from '../lib/notifications'
 import type { DispatchDoc } from '../lib/types'
 import AppNav from '../components/AppNav'
@@ -35,13 +35,13 @@ function EmptyState() {
   const [code, setCode] = useState('')
   const navigate = useNavigate()
   const rootRef = useRef<HTMLDivElement>(null)
-  useEffect(() => pageEnter(rootRef.current), [])
+  useLayoutEffect(() => pageEnter(rootRef.current), [])
 
   return (
     <div ref={rootRef} className="grid min-h-[70dvh] place-items-center px-6 text-center">
       <div className="w-full max-w-sm">
         <div data-animate>
-          <Mascot variant={2} float size={180} className="mx-auto" />
+          <Mascot float size={180} className="mx-auto" />
         </div>
         <h2 data-animate className="font-display mt-4 text-3xl uppercase text-space">
           No active challenge
@@ -361,7 +361,7 @@ function WeeklyDispatch({
 }
 
 export default function Dashboard() {
-  const { user, profile, signOutUser, completeProfile } = useAuth()
+  const { user, profile, profileLoading, signOutUser, completeProfile } = useAuth()
   const navigate = useNavigate()
   const {
     loading: listLoading,
@@ -369,24 +369,27 @@ export default function Dashboard() {
     completed: completedEntries,
     archive: archiveChallenge,
   } = useMyChallenges()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedOverride, setSelectedOverride] = useState<string | null>(null)
   const rootRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [celebration, setCelebration] = useState<{ line: string; firstName: string } | null>(null)
 
-  // Default to the newest active challenge; keep the current pick if it's
-  // still around (e.g. after a refresh), otherwise fall back.
-  useEffect(() => {
-    if (listLoading) return
-    if (selectedId && activeEntries.some((e) => e.challenge.id === selectedId)) return
-    setSelectedId(activeEntries[0]?.challenge.id ?? null)
-  }, [listLoading, activeEntries, selectedId])
+  // Derived during render, not set from an effect. An effect would leave one
+  // commit where the list has resolved but the selection is still null — and
+  // in that commit `loading` below is false with no challenge, which rendered
+  // a full frame of the "no active challenge" EmptyState before snapping back.
+  // Deriving it means that in-between state cannot exist.
+  // The override is the user's explicit pick; it wins while it's still active.
+  const selectedId =
+    selectedOverride && activeEntries.some((e) => e.challenge.id === selectedOverride)
+      ? selectedOverride
+      : (activeEntries[0]?.challenge.id ?? null)
 
   const data = useChallengeData(selectedId)
   const { loading: challengeLoading, challenge, member, members, checkins, standings, refresh } = data
-  const loading = listLoading || (Boolean(selectedId) && challengeLoading)
+  const loading = listLoading || profileLoading || (Boolean(selectedId) && challengeLoading)
   const me = standings.find((s) => s.uid === user?.uid)
   const challengeCardRef = useHoverLift({ scale: 1.02, y: -3 })
 
@@ -404,9 +407,12 @@ export default function Dashboard() {
     await refresh()
   }
 
-  useEffect(() => {
-    if (!loading && challenge) pageEnter(rootRef.current)
-  }, [loading, challenge])
+  // Not gated on `challenge`: a user with no active challenge but a
+  // non-empty Completed list still has [data-animate] content to reveal, and
+  // gating on it left that section stuck invisible.
+  useLayoutEffect(() => {
+    if (!loading) pageEnter(rootRef.current)
+  }, [loading])
 
   useEffect(() => {
     if (challenge) getInviteCode(challenge.id).then(setInviteCode)
@@ -431,13 +437,10 @@ export default function Dashboard() {
             aria-label="Edit your profile"
             className="grid h-11 w-11 place-items-center overflow-hidden rounded-full border-2 border-space/15 bg-white active:border-steel"
           >
-            <img
-              src={renderAvatarDataUri(profile?.avatarSeed ?? '')}
-              width={44}
-              height={44}
-              alt=""
+            <AvatarImage
+              seed={profile?.avatarSeed ?? ''}
+              size={44}
               className="h-11 w-11"
-              draggable={false}
             />
           </button>
         </div>
@@ -458,7 +461,7 @@ export default function Dashboard() {
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelectedId(c.id)}
+                  onClick={() => setSelectedOverride(c.id)}
                   aria-pressed={c.id === selectedId}
                   className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold ${
                     c.id === selectedId
@@ -589,7 +592,7 @@ export default function Dashboard() {
                   }}
                 />
               </div>
-              <Mascot variant={0} size={92} className="mb-1 shrink-0" />
+              <Mascot variant={0} size={92} still className="mb-1 shrink-0" />
             </div>
           </section>
 

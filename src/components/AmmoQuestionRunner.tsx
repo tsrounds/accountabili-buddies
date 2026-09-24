@@ -1,7 +1,7 @@
 import type { FormEvent, ReactNode } from 'react'
 import { Check, SkipForward } from 'lucide-react'
 import type { AmmoPrompt } from '../lib/ammoQuestions'
-import { renderAvatarDataUri } from '../lib/avatar'
+import AvatarImage from './AvatarImage'
 
 interface AmmoQuestionRunnerProps {
   prompt: AmmoPrompt
@@ -39,13 +39,10 @@ export default function AmmoQuestionRunner({
       className="rounded-2xl border-2 border-space/10 bg-white p-4 shadow-card"
     >
       <div className="flex items-center gap-3">
-        <img
-          src={renderAvatarDataUri(avatarSeed)}
-          width={48}
-          height={48}
-          alt=""
+        <AvatarImage
+          seed={avatarSeed}
+          size={48}
           className="h-12 w-12 shrink-0 rounded-full bg-papaya"
-          draggable={false}
         />
         <div>
           <p className="text-xs font-bold tracking-wide uppercase text-space/50">

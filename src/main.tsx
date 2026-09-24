@@ -1,14 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import '@fontsource/anton'
-import '@fontsource/atkinson-hyperlegible'
-import '@fontsource/atkinson-hyperlegible/700.css'
+// Latin subsets only. The bare '@fontsource/x' entry points pull every subset
+// the package ships (latin-ext, vietnamese) plus legacy .woff duplicates —
+// ~93 KB of files an English-only app never serves.
+import '@fontsource/anton/latin-400.css'
+import '@fontsource/atkinson-hyperlegible/latin-400.css'
+import '@fontsource/atkinson-hyperlegible/latin-700.css'
 import './index.css'
 import App from './App'
-
-// Lets CSS know JS is live so entrance animations can hide-then-reveal safely.
-document.documentElement.classList.add('js')
 
 // Register the FCM service worker after load so it doesn't compete with the
 // initial render. notifications.ts later awaits navigator.serviceWorker.ready

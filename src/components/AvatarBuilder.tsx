@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createTimeline } from 'animejs'
 import { Dices } from 'lucide-react'
-import { randomAvatarSeed, renderAvatarDataUri } from '../lib/avatar'
+import { randomAvatarSeed } from '../lib/avatar'
+import AvatarImage from './AvatarImage'
 import { prefersReducedMotion } from '../lib/motion'
 
 interface AvatarBuilderProps {
@@ -87,10 +88,8 @@ export default function AvatarBuilder({ seed, onChange, size = DEFAULT_SIZE }: A
   function spin() {
     if (spinning) return
     setRollCount((n) => n + 1)
-    // Pre-generate the whole pool + prime the render cache synchronously.
-    // Cheap for open-peeps, and keeps the animation frame loop pure indexing.
+    // Pre-generate the whole pool so the animation frame loop is pure indexing.
     const pool = Array.from({ length: POOL_SIZE }, () => randomAvatarSeed())
-    pool.forEach((s) => renderAvatarDataUri(s))
     const final = pool[pool.length - 1]
 
     if (prefersReducedMotion()) {
@@ -124,13 +123,10 @@ export default function AvatarBuilder({ seed, onChange, size = DEFAULT_SIZE }: A
     <div className="flex items-center gap-5">
       {/* Transparent portrait — no frame, just the head. */}
       <div ref={wrapRef} className="shrink-0">
-        <img
-          src={renderAvatarDataUri(displaySeed)}
-          width={size}
-          height={size}
-          style={{ width: size, height: size }}
+        <AvatarImage
+          seed={displaySeed}
+          size={size}
           alt="Your avatar"
-          draggable={false}
           className="block select-none drop-shadow-sm"
         />
       </div>

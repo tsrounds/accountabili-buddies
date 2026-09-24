@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Flag, Target, X, AlertTriangle } from 'lucide-react'
@@ -301,7 +301,7 @@ export default function ChallengeDetail() {
   const { id = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const memberParam = searchParams.get('member')
-  const { user, profile } = useAuth()
+  const { user, profile, profileLoading } = useAuth()
   const navigate = useNavigate()
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -343,7 +343,7 @@ export default function ChallengeDetail() {
     }
   }, [id, navigate, refreshKey])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!loading) pageEnter(rootRef.current)
   }, [loading])
 
@@ -363,7 +363,7 @@ export default function ChallengeDetail() {
     [challenge, members, checkins],
   )
 
-  if (loading || !challenge) return <LoadingScreen />
+  if (loading || profileLoading || !challenge) return <LoadingScreen />
 
   const historyUid = selectedUid ?? user?.uid ?? standings[0]?.uid
   const historyCheckins = checkins.filter((c) => c.uid === historyUid)
@@ -510,7 +510,7 @@ export default function ChallengeDetail() {
         )}
 
         <div className="mt-10 flex justify-center opacity-70">
-          <Mascot variant={1} size={80} />
+          <Mascot variant={1} size={80} still />
         </div>
       </div>
     </main>

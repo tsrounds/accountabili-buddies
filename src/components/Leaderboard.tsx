@@ -3,7 +3,7 @@ import { animate } from 'animejs'
 import { Flame } from 'lucide-react'
 import type { MemberStanding } from '../lib/types'
 import { attachListHoverLift, prefersReducedMotion } from '../lib/motion'
-import { renderAvatarDataUri } from '../lib/avatar'
+import AvatarImage from './AvatarImage'
 import RecordBadge from './RecordBadge'
 
 interface LeaderboardProps {
@@ -73,13 +73,10 @@ export default function Leaderboard({ standings, meUid, onSelectMember }: Leader
                   >
                     {s.rank}
                   </span>
-                  <img
-                    src={renderAvatarDataUri(s.avatarSeed)}
-                    width={36}
-                    height={36}
-                    alt=""
+                  <AvatarImage
+                    seed={s.avatarSeed}
+                    size={36}
                     className="h-9 w-9 shrink-0 rounded-full border-2 border-space/10 bg-papaya"
-                    draggable={false}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">

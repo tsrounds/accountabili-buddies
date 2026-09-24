@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { getOrGenerateDailyRoasts } from '../lib/roasts'
 import { prefersReducedMotion } from '../lib/motion'
-import { renderAvatarDataUri } from '../lib/avatar'
+import AvatarImage from './AvatarImage'
 import type { Challenge, MemberStanding, RoastDoc, RoastEntry } from '../lib/types'
 import Mascot from './Mascot'
 
@@ -129,7 +129,7 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
 
       {state === 'loading' && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-space/10 bg-white px-6 py-8 shadow-card">
-          <Mascot variant={2} size={110} />
+          <Mascot variant={2} size={110} still />
           <p ref={pulseRef} className="text-sm font-bold tracking-wide text-space/70">
             Cooking up today’s roasts…
           </p>
@@ -203,13 +203,10 @@ export default function RoastsSection({ challenge, standings }: RoastsSectionPro
                   />
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <img
-                        src={renderAvatarDataUri(entry.avatarSeed)}
-                        width={28}
-                        height={28}
-                        alt=""
+                      <AvatarImage
+                        seed={entry.avatarSeed}
+                        size={28}
                         className="h-7 w-7 rounded-full bg-papaya"
-                        draggable={false}
                       />
                       <p
                         className={`text-xs font-bold tracking-[0.2em] uppercase ${

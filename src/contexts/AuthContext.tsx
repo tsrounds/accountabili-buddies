@@ -19,8 +19,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
-import { auth, db, functions } from '../lib/firebase'
+import { auth, db, getFunctionsLazy } from '../lib/firebase'
 import { ADMIN_EMAIL } from '../lib/constants'
 import { FALLBACK_AVATAR_SEED, randomAvatarSeed } from '../lib/avatar'
 import type { UserProfile } from '../lib/types'
@@ -32,6 +31,8 @@ interface AuthContextValue {
   user: User | null
   profile: UserProfile | null
   loading: boolean
+  /** True while this user's profile doc is still in flight. */
+  profileLoading: boolean
   /** True while a magic link in the URL is being exchanged for a session. */
   completingSignIn: boolean
   /** Set when the link was opened on a device without the stored email. */
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(true)
   const [completingSignIn, setCompletingSignIn] = useState(() =>
     isSignInWithEmailLink(auth, window.location.href),
   )
@@ -160,21 +162,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [finishLink])
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (u) => {
+    // `loading` now means "auth is unresolved", nothing more. It used to also
+    // cover the ensureUserDoc() round trip, which kept a full-screen loading
+    // screen up and — worse — delayed mounting the app at all, so the
+    // Dashboard's own queries couldn't start until the profile had landed.
+    // Releasing auth first lets those run in parallel; consumers that actually
+    // need the profile wait on `profileLoading` instead.
+    let generation = 0
+    return onAuthStateChanged(auth, (u) => {
+      const mine = ++generation
       setUser(u)
-      if (u) {
-        try {
-          const { profile: p, created } = await ensureUserDoc(u)
+      setLoading(false)
+
+      if (!u) {
+        setProfile(null)
+        setProfileLoading(false)
+        return
+      }
+
+      setProfileLoading(true)
+      ensureUserDoc(u)
+        .then(({ profile: p, created }) => {
+          if (mine !== generation) return
           setProfile(p)
           setNeedsAvatar(created)
-        } catch (err) {
+        })
+        .catch((err) => {
+          if (mine !== generation) return
           console.error('Failed to load profile', err)
           setProfile(null)
-        }
-      } else {
-        setProfile(null)
-      }
-      setLoading(false)
+        })
+        .finally(() => {
+          if (mine === generation) setProfileLoading(false)
+        })
     })
   }, [])
 
@@ -239,6 +259,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOutUser = useCallback(() => signOut(auth), [])
 
   const createPairingCode = useCallback(async () => {
+    const [{ httpsCallable }, functions] = await Promise.all([
+      import('firebase/functions'),
+      getFunctionsLazy(),
+    ])
     const call = httpsCallable<void, { code: string; expiresAt: number }>(
       functions,
       'createPairingCode',
@@ -248,6 +272,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const redeemPairingCode = useCallback(async (code: string) => {
+    const [{ httpsCallable }, functions] = await Promise.all([
+      import('firebase/functions'),
+      getFunctionsLazy(),
+    ])
     const call = httpsCallable<{ code: string }, { token: string }>(
       functions,
       'redeemPairingCode',
@@ -262,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         profile,
         loading,
+        profileLoading,
         completingSignIn,
         needsEmailConfirm,
         needsAvatar,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, Plus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -12,7 +12,8 @@ import {
 } from '../lib/challenges'
 import { nextAmmoPrompt, type AmmoPrompt } from '../lib/ammoQuestions'
 import { pageEnter, reveal } from '../lib/motion'
-import { randomAvatarSeed, renderAvatarDataUri } from '../lib/avatar'
+import { randomAvatarSeed } from '../lib/avatar'
+import AvatarImage from '../components/AvatarImage'
 import type { Challenge, FrequencyPeriod, Member } from '../lib/types'
 import TopBar from '../components/TopBar'
 import Mascot from '../components/Mascot'
@@ -88,7 +89,7 @@ export default function Join() {
   }, [code, user, navigate])
 
   // Standard entrance animation whenever we swap into a new content phase.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (state.phase === 'loading' || state.phase === 'invalid') return
     pageEnter(rootRef.current)
   }, [state.phase])
@@ -99,7 +100,7 @@ export default function Join() {
     return (
       <main className="grid min-h-dvh place-items-center px-6 text-center">
         <div>
-          <Mascot variant={2} size={150} className="mx-auto" />
+          <Mascot size={150} className="mx-auto" />
           <h1 className="font-display mt-4 text-3xl uppercase text-space">
             Couldn’t get you in
           </h1>
@@ -126,7 +127,7 @@ export default function Join() {
     return (
       <main className="grid min-h-dvh place-items-center px-6 text-center">
         <div>
-          <Mascot variant={2} size={150} className="mx-auto" />
+          <Mascot size={150} className="mx-auto" />
           <h1 className="font-display mt-4 text-3xl uppercase text-space">
             That code’s a dud
           </h1>
@@ -297,13 +298,10 @@ function PreviewPhase({
                 key={m.uid}
                 className="flex items-center gap-2 rounded-full border-2 border-space/10 bg-white py-1 pr-3 pl-1"
               >
-                <img
-                  src={renderAvatarDataUri(m.avatarSeed)}
-                  width={28}
-                  height={28}
-                  alt=""
+                <AvatarImage
+                  seed={m.avatarSeed}
+                  size={28}
                   className="h-7 w-7 rounded-full bg-papaya"
-                  draggable={false}
                 />
                 <span className="text-sm font-bold text-space">{m.firstName}</span>
               </li>
@@ -529,7 +527,7 @@ function AmmoPhase({
     [members],
   )
   const avatarFor = (uid: string) =>
-    renderAvatarDataUri(members.find((m) => m.uid === uid)?.avatarSeed ?? '')
+    members.find((m) => m.uid === uid)?.avatarSeed ?? ''
 
   const [answered, setAnswered] = useState(0)
   const [ammoByUid, setAmmoByUid] = useState<Record<string, number>>({})
@@ -547,7 +545,7 @@ function AmmoPhase({
   // Re-run the entrance whenever the body swaps between prompt and review.
   // data-animate can't cover mid-phase content — it starts hidden and the
   // parent's pageEnter only fires once, on phase entry.
-  useEffect(() => {
+  useLayoutEffect(() => {
     reveal(bodyRef.current)
   }, [view])
 
@@ -715,13 +713,10 @@ function AmmoPhase({
                       onClick={() => goToPrompt(p.uid)}
                       className="flex w-full items-center gap-3 rounded-2xl border-2 border-space/10 bg-white px-3.5 py-3 text-left shadow-card hover:border-steel/60 hover:bg-steel/10"
                     >
-                      <img
-                        src={avatarFor(p.uid)}
-                        width={44}
-                        height={44}
-                        alt=""
+                      <AvatarImage
+                        seed={avatarFor(p.uid)}
+                        size={44}
                         className="h-11 w-11 shrink-0 rounded-full bg-papaya"
-                        draggable={false}
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-bold text-space">{p.firstName}</p>

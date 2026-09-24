@@ -18,10 +18,90 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/png" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <!-- The boot shell's mascot: in flight before the bundle even parses. -->
+    <link
+      rel="preload"
+      as="image"
+      href="/mascot/idle-a.v1.poster.webp"
+      type="image/webp"
+    />
     <title>Accountabili-Buddies</title>
+    <!--
+      Critical boot styles + shell. On an iOS standalone launch nothing else
+      paints until the stylesheet AND the entry bundle have both landed, so
+      this block is the whole first frame.
+
+      Keep it visually identical to src/components/LoadingScreen.tsx — React
+      clears #root on its first commit, and the handover only reads as "nothing
+      happened" if the two match. Change one, change the other.
+    -->
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #fdf0d5;
+        color: #003049;
+        font-family: 'Atkinson Hyperlegible', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #boot-shell {
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      #boot-shell > div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+      #boot-shell img {
+        width: 150px;
+        height: 150px;
+        user-select: none;
+      }
+      #boot-shell p {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0.025em;
+        color: rgb(0 48 73 / 0.7);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        #boot-shell p {
+          animation: bootPulse 1.8s ease-in-out infinite;
+        }
+      }
+      @keyframes bootPulse {
+        0%,
+        100% {
+          opacity: 0.35;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-shell">
+        <div>
+          <img
+            src="/mascot/idle-a.v1.poster.webp"
+            width="150"
+            height="150"
+            alt="The mascot, watching. Unimpressed."
+            draggable="false"
+          />
+          <p>Judging silently…</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

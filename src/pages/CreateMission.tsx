@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Copy, Share2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,7 +9,7 @@ import TopBar from '../components/TopBar'
 import Mascot from '../components/Mascot'
 
 export default function CreateMission() {
-  const { user, profile } = useAuth()
+  const { user, profile, profileLoading } = useAuth()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [ongoing, setOngoing] = useState(true)
@@ -25,14 +25,14 @@ export default function CreateMission() {
   const rootRef = useRef<HTMLDivElement>(null)
   const shareRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => pageEnter(rootRef.current), [])
-  useEffect(() => {
+  useLayoutEffect(() => pageEnter(rootRef.current), [])
+  useLayoutEffect(() => {
     if (created) reveal(shareRef.current, 24)
   }, [created])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!user || busy) return
+    if (!user || busy || profileLoading) return
     setBusy(true)
     try {
       const result = await createChallenge({
@@ -83,7 +83,7 @@ export default function CreateMission() {
       <main className="min-h-dvh">
         <TopBar title="Challenge live" />
         <div ref={shareRef} className="mx-auto max-w-lg px-5 pb-16 text-center">
-          <Mascot variant={1} float size={140} className="mx-auto mt-4" />
+          <Mascot float size={140} className="mx-auto mt-4" />
           <h2 className="font-display mt-4 text-3xl uppercase text-space">
             “{name}” is live
           </h2>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Sparkles, X } from 'lucide-react'
 import { listAmmoByAuthor } from '../lib/challenges'
-import { renderAvatarDataUri } from '../lib/avatar'
+import AvatarImage from './AvatarImage'
 import type { Member } from '../lib/types'
 import AmmoAboutSheet from './AmmoAboutSheet'
 
@@ -112,13 +112,10 @@ export default function NewBuddyNudge({
             key={n.uid}
             className="flex items-center gap-3 rounded-2xl border-2 border-space/10 bg-white p-3 pl-3.5 shadow-card"
           >
-            <img
-              src={renderAvatarDataUri(n.avatarSeed)}
-              width={44}
-              height={44}
-              alt=""
+            <AvatarImage
+              seed={n.avatarSeed}
+              size={44}
               className="h-11 w-11 shrink-0 rounded-full bg-papaya"
-              draggable={false}
             />
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold text-space">{n.firstName} joined</p>
