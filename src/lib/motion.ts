@@ -6,6 +6,29 @@ export function prefersReducedMotion(): boolean {
 }
 
 /**
+ * True when an entrance animation should be skipped outright and its targets
+ * just shown.
+ *
+ * `document.hidden` is the load-bearing half: anime's rAF engine never ticks
+ * for a page that loads in a background tab, and it does NOT catch up when the
+ * tab is later revealed — so a hide-then-animate entrance strands its content
+ * invisible forever. A page nobody is looking at doesn't need an entrance.
+ */
+function skipEntrance(): boolean {
+  return prefersReducedMotion() || document.hidden
+}
+
+/**
+ * Last line of defence for the hide-then-reveal pattern: if the animation that
+ * is supposed to undo the hide never completes, show the targets anyway.
+ * Missing animation is a blemish; missing content is a broken app.
+ */
+function failsafeShow(targets: ArrayLike<HTMLElement>, afterMs: number) {
+  const id = window.setTimeout(() => utils.set(targets, { opacity: 1 }), afterMs)
+  return () => window.clearTimeout(id)
+}
+
+/**
  * Standard page entrance: every [data-animate] child cascades in.
  *
  * Call from a LAYOUT effect. The hide is done here, synchronously, one line
@@ -17,17 +40,19 @@ export function pageEnter(root: HTMLElement | null): void {
   if (!root) return
   const targets = root.querySelectorAll<HTMLElement>('[data-animate]')
   if (targets.length === 0) return
-  if (prefersReducedMotion()) {
+  if (skipEntrance()) {
     utils.set(targets, { opacity: 1 })
     return
   }
   utils.set(targets, { opacity: 0 })
+  const clear = failsafeShow(targets, 400 + 70 * targets.length + 1200)
   animate(targets, {
     opacity: [0, 1],
     translateY: [24, 0],
     duration: 400,
     delay: stagger(70),
     ease: 'outCubic',
+    onComplete: clear,
   })
 }
 
@@ -37,16 +62,18 @@ export function pageEnter(root: HTMLElement | null): void {
  */
 export function reveal(el: HTMLElement | null, distance = 16): void {
   if (!el) return
-  if (prefersReducedMotion()) {
+  if (skipEntrance()) {
     utils.set(el, { opacity: 1 })
     return
   }
   utils.set(el, { opacity: 0 })
+  const clear = failsafeShow([el], 1600)
   animate(el, {
     opacity: [0, 1],
     translateY: [distance, 0],
     duration: 320,
     ease: 'outCubic',
+    onComplete: clear,
   })
 }
 

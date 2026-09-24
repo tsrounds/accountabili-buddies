@@ -67,13 +67,22 @@ export default function Login() {
   useLayoutEffect(() => {
     if (loading || completingSignIn || user || !rootRef.current) return
     const targets = rootRef.current.querySelectorAll<HTMLElement>('[data-animate]')
-    if (prefersReducedMotion()) {
-      targets.forEach((el) => (el.style.opacity = '1'))
+    const show = () => targets.forEach((el) => (el.style.opacity = '1'))
+    // A page that loads in a background tab never ticks anime's rAF engine,
+    // and it doesn't catch up when the tab is revealed — hiding these would
+    // strand the whole sign-in form invisible. Same reasoning as motion.ts.
+    if (prefersReducedMotion() || document.hidden) {
+      show()
       return
     }
     targets.forEach((el) => (el.style.opacity = '0'))
+    // ...and if the entrance somehow doesn't finish, show them anyway.
+    const failsafe = window.setTimeout(show, 3000)
     // Mascot drops in → wordmark → form slides up → button settles ready.
-    const tl = createTimeline({ defaults: { ease: 'outCubic' } })
+    const tl = createTimeline({
+      defaults: { ease: 'outCubic' },
+      onComplete: () => window.clearTimeout(failsafe),
+    })
     tl.add('[data-animate="mascot"]', {
       opacity: [0, 1],
       translateY: [-32, 0],
@@ -95,6 +104,8 @@ export default function Login() {
         { opacity: [0, 1], scale: [0.96, 1.03, 1], duration: 380 },
         '-=120',
       )
+
+    return () => window.clearTimeout(failsafe)
   }, [loading, completingSignIn, user, phase, needsEmailConfirm])
 
   if (loading || completingSignIn) return <LoadingScreen message="Verifying your link…" />
