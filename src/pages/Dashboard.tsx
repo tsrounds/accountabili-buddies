@@ -411,7 +411,8 @@ export default function Dashboard() {
   // non-empty Completed list still has [data-animate] content to reveal, and
   // gating on it left that section stuck invisible.
   useLayoutEffect(() => {
-    if (!loading) pageEnter(rootRef.current)
+    if (loading) return
+    return pageEnter(rootRef.current)
   }, [loading])
 
   useEffect(() => {

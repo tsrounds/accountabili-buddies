@@ -76,12 +76,10 @@ export default function Login() {
       return
     }
     targets.forEach((el) => (el.style.opacity = '0'))
-    // ...and if the entrance somehow doesn't finish, show them anyway.
-    const failsafe = window.setTimeout(show, 3000)
     // Mascot drops in → wordmark → form slides up → button settles ready.
     const tl = createTimeline({
       defaults: { ease: 'outCubic' },
-      onComplete: () => window.clearTimeout(failsafe),
+      onComplete: () => stop(),
     })
     tl.add('[data-animate="mascot"]', {
       opacity: [0, 1],
@@ -105,7 +103,25 @@ export default function Login() {
         '-=120',
       )
 
-    return () => window.clearTimeout(failsafe)
+    // Abandon the entrance if the tab is backgrounded mid-flight. anime keeps
+    // ticking (just ~100x slower) and overwrites opacity every frame, so the
+    // timeline has to be cancelled — merely showing the targets gets clobbered.
+    const settle = () => {
+      tl.cancel()
+      show()
+      stop()
+    }
+    const onVisibility = () => {
+      if (document.hidden) settle()
+    }
+    const timer = window.setTimeout(settle, 3000)
+    document.addEventListener('visibilitychange', onVisibility)
+
+    function stop() {
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+    return stop
   }, [loading, completingSignIn, user, phase, needsEmailConfirm])
 
   if (loading || completingSignIn) return <LoadingScreen message="Verifying your link…" />

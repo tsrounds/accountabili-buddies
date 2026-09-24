@@ -344,7 +344,8 @@ export default function ChallengeDetail() {
   }, [id, navigate, refreshKey])
 
   useLayoutEffect(() => {
-    if (!loading) pageEnter(rootRef.current)
+    if (loading) return
+    return pageEnter(rootRef.current)
   }, [loading])
 
   useEffect(() => {

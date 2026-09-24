@@ -19,13 +19,38 @@ function skipEntrance(): boolean {
 }
 
 /**
- * Last line of defence for the hide-then-reveal pattern: if the animation that
- * is supposed to undo the hide never completes, show the targets anyway.
+ * Last line of defence for the hide-then-reveal pattern.
+ *
+ * Note it *cancels* the animation rather than just setting opacity: anime's
+ * engine doesn't stop in a background tab, it slows to a crawl, and every tick
+ * overwrites opacity with its own in-progress value. Simply showing the
+ * targets gets clobbered a frame later. Watching `visibilitychange` matters
+ * for the same reason — checking `document.hidden` once, when the entrance
+ * starts, misses a tab that gets backgrounded a moment afterwards.
+ *
  * Missing animation is a blemish; missing content is a broken app.
  */
-function failsafeShow(targets: ArrayLike<HTMLElement>, afterMs: number) {
-  const id = window.setTimeout(() => utils.set(targets, { opacity: 1 }), afterMs)
-  return () => window.clearTimeout(id)
+function guardEntrance(
+  anim: { cancel: () => void },
+  targets: ArrayLike<HTMLElement>,
+  afterMs: number,
+): () => void {
+  const settle = () => {
+    anim.cancel()
+    utils.set(targets, { opacity: 1, translateY: 0 })
+    stop()
+  }
+  const onVisibility = () => {
+    if (document.hidden) settle()
+  }
+  const timer = window.setTimeout(settle, afterMs)
+  document.addEventListener('visibilitychange', onVisibility)
+
+  function stop() {
+    window.clearTimeout(timer)
+    document.removeEventListener('visibilitychange', onVisibility)
+  }
+  return stop
 }
 
 /**
@@ -36,45 +61,51 @@ function failsafeShow(targets: ArrayLike<HTMLElement>, afterMs: number) {
  * by anything other than the animation that is about to reveal them, and a
  * page that never calls this simply shows its content unanimated.
  */
-export function pageEnter(root: HTMLElement | null): void {
-  if (!root) return
+export function pageEnter(root: HTMLElement | null): () => void {
+  const noop = () => {}
+  if (!root) return noop
   const targets = root.querySelectorAll<HTMLElement>('[data-animate]')
-  if (targets.length === 0) return
+  if (targets.length === 0) return noop
   if (skipEntrance()) {
     utils.set(targets, { opacity: 1 })
-    return
+    return noop
   }
   utils.set(targets, { opacity: 0 })
-  const clear = failsafeShow(targets, 400 + 70 * targets.length + 1200)
-  animate(targets, {
+  let stop = () => {}
+  const anim = animate(targets, {
     opacity: [0, 1],
     translateY: [24, 0],
     duration: 400,
     delay: stagger(70),
     ease: 'outCubic',
-    onComplete: clear,
+    onComplete: () => stop(),
   })
+  stop = guardEntrance(anim, targets, 400 + 70 * targets.length + 1200)
+  return stop
 }
 
 /**
  * Reveal a single late-arriving element (e.g. content that finished loading).
  * Same contract as pageEnter: call from a layout effect.
  */
-export function reveal(el: HTMLElement | null, distance = 16): void {
-  if (!el) return
+export function reveal(el: HTMLElement | null, distance = 16): () => void {
+  const noop = () => {}
+  if (!el) return noop
   if (skipEntrance()) {
     utils.set(el, { opacity: 1 })
-    return
+    return noop
   }
   utils.set(el, { opacity: 0 })
-  const clear = failsafeShow([el], 1600)
-  animate(el, {
+  let stop = () => {}
+  const anim = animate(el, {
     opacity: [0, 1],
     translateY: [distance, 0],
     duration: 320,
     ease: 'outCubic',
-    onComplete: clear,
+    onComplete: () => stop(),
   })
+  stop = guardEntrance(anim, [el], 1600)
+  return stop
 }
 
 /** Small press feedback on tap targets. */

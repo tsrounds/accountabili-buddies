@@ -91,7 +91,7 @@ export default function Join() {
   // Standard entrance animation whenever we swap into a new content phase.
   useLayoutEffect(() => {
     if (state.phase === 'loading' || state.phase === 'invalid') return
-    pageEnter(rootRef.current)
+    return pageEnter(rootRef.current)
   }, [state.phase])
 
   // Anonymous sign-in failed (e.g. provider disabled, or offline) — don't
@@ -545,9 +545,7 @@ function AmmoPhase({
   // Re-run the entrance whenever the body swaps between prompt and review.
   // data-animate can't cover mid-phase content — it starts hidden and the
   // parent's pageEnter only fires once, on phase entry.
-  useLayoutEffect(() => {
-    reveal(bodyRef.current)
-  }, [view])
+  useLayoutEffect(() => reveal(bodyRef.current), [view])
 
   function markUsed(p: AmmoPrompt) {
     usedKeys.add(`${p.participant.uid}:${p.templateId}`)

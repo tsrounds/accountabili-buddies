@@ -27,7 +27,8 @@ export default function CreateMission() {
 
   useLayoutEffect(() => pageEnter(rootRef.current), [])
   useLayoutEffect(() => {
-    if (created) reveal(shareRef.current, 24)
+    if (!created) return
+    return reveal(shareRef.current, 24)
   }, [created])
 
   async function handleSubmit(e: FormEvent) {
